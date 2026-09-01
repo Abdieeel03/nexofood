@@ -1,0 +1,226 @@
+.hero {
+  position: relative;
+  min-height: 820px;
+  display: flex;
+  align-items: center;
+  padding-top: calc(72px + var(--spacing-3xl));
+  padding-bottom: var(--spacing-3xl);
+  overflow: hidden;
+  background-color: var(--color-inverse-surface);
+}
+
+.bgWrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.bgImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.bgOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.92) 0%,
+    rgba(22, 31, 26, 0.88) 100%
+  );
+  z-index: 1;
+}
+
+.contentGrid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: var(--spacing-2xl);
+  align-items: center;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  color: var(--color-inverse-on-surface);
+}
+
+.pillBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background-color: rgba(221, 228, 221, 0.15);
+  border: 1px solid rgba(187, 202, 191, 0.3);
+  backdrop-filter: blur(8px);
+  width: fit-content;
+}
+
+.badgeIcon {
+  color: var(--color-primary-container);
+  display: flex;
+}
+
+.badgeText {
+  font-size: var(--font-label-sm-size);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-inverse-on-surface);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.title {
+  font-size: var(--font-display-lg-size);
+  line-height: var(--font-display-lg-line-height);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.highlight {
+  color: var(--color-primary-container);
+  position: relative;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.highlightSvg {
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  color: rgba(16, 185, 129, 0.45);
+}
+
+.description {
+  font-size: var(--font-body-lg-size);
+  line-height: var(--font-body-lg-line-height);
+  color: rgba(235, 243, 235, 0.85);
+  max-width: 580px;
+}
+
+.formWrapper {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-sm);
+  max-width: 540px;
+  margin-top: var(--spacing-sm);
+}
+
+.inputGroup {
+  position: relative;
+  flex: 1;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-outline);
+  pointer-events: none;
+}
+
+.emailInput {
+  width: 100%;
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  padding: 14px 14px 14px 44px;
+  font-size: 15px;
+  transition: all var(--transition-normal);
+  outline: none;
+}
+
+.emailInput:focus {
+  border-color: var(--color-primary-container);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.emailInput::placeholder {
+  color: var(--color-outline);
+}
+
+.trustBadges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xs);
+  color: rgba(235, 243, 235, 0.8);
+  font-size: var(--font-label-sm-size);
+  font-weight: var(--font-weight-semibold);
+}
+
+.trustBadgeItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trustBadgeIcon {
+  color: var(--color-primary-container);
+  display: flex;
+}
+
+/* Right column with mockup */
+.rightColumn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.mockupImage {
+  width: 100%;
+  max-width: 480px;
+  filter: drop-shadow(0 25px 35px rgba(0, 0, 0, 0.45));
+}
+
+@media (max-width: 960px) {
+  .hero {
+    min-height: auto;
+    padding-top: calc(72px + var(--spacing-2xl));
+    padding-bottom: var(--spacing-2xl);
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--spacing-xl);
+  }
+
+  .leftColumn {
+    align-items: center;
+  }
+
+  .title {
+    font-size: var(--font-display-lg-mobile-size);
+    line-height: var(--font-display-lg-mobile-line-height);
+  }
+
+  .formWrapper {
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .trustBadges {
+    justify-content: center;
+  }
+
+  .rightColumn {
+    margin-top: var(--spacing-lg);
+  }
+
+  .mockupImage {
+    max-width: 360px;
+  }
+}

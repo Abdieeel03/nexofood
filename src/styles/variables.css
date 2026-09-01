@@ -1,0 +1,146 @@
+:root {
+  /* ==========================================================================
+     Colors - Nexofood Core Design System (DESIGN.md)
+     ========================================================================== */
+  --color-primary: #006c49;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #10b981;
+  --color-on-primary-container: #00422b;
+  --color-inverse-primary: #4edea3;
+  --color-primary-fixed: #6ffbbe;
+  --color-primary-fixed-dim: #4edea3;
+  --color-on-primary-fixed: #002113;
+  --color-on-primary-fixed-variant: #005236;
+
+  /* Secondary (Appetite Tangerine) */
+  --color-secondary: #ab3500;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fe6a34;
+  --color-secondary-accent: #ff6b35;
+  --color-on-secondary-container: #5d1900;
+  --color-secondary-fixed: #ffdbd0;
+  --color-secondary-fixed-dim: #ffb59d;
+  --color-on-secondary-fixed: #390c00;
+  --color-on-secondary-fixed-variant: #832600;
+
+  /* Tertiary */
+  --color-tertiary: #a43a3a;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #fc7c78;
+  --color-on-tertiary-container: #711419;
+  --color-tertiary-fixed: #ffdad7;
+  --color-tertiary-fixed-dim: #ffb3af;
+  --color-on-tertiary-fixed: #410005;
+  --color-on-tertiary-fixed-variant: #842225;
+
+  /* Surfaces & Backgrounds */
+  --color-background: #f4fbf4;
+  --color-on-background: #161d19;
+  --color-surface: #f4fbf4;
+  --color-surface-dim: #d4dcd5;
+  --color-surface-bright: #f4fbf4;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eef6ee;
+  --color-surface-container: #e8f0e9;
+  --color-surface-container-high: #e3eae3;
+  --color-surface-container-highest: #dde4dd;
+  --color-surface-variant: #dde4dd;
+  --color-on-surface: #161d19;
+  --color-on-surface-variant: #3c4a42;
+
+  /* Inverse Surface (Deep Navy / Charcoal) */
+  --color-inverse-surface: #161f1a;
+  --color-inverse-surface-dark: #0f172a;
+  --color-inverse-on-surface: #ebf3eb;
+
+  /* Outlines & Borders */
+  --color-outline: #6c7a71;
+  --color-outline-variant: #bbcabf;
+  --color-border-subtle: rgba(187, 202, 191, 0.4);
+  --color-surface-tint: #006c49;
+
+  /* Feedback & Error */
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* ==========================================================================
+     Typography - Plus Jakarta Sans
+     ========================================================================== */
+  --font-family-base: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Font Sizes & Line Heights */
+  --font-display-lg-size: 48px;
+  --font-display-lg-line-height: 56px;
+  --font-display-lg-mobile-size: 32px;
+  --font-display-lg-mobile-line-height: 40px;
+
+  --font-headline-lg-size: 30px;
+  --font-headline-lg-line-height: 38px;
+  --font-headline-md-size: 24px;
+  --font-headline-md-line-height: 32px;
+
+  --font-body-lg-size: 18px;
+  --font-body-lg-line-height: 28px;
+  --font-body-md-size: 16px;
+  --font-body-md-line-height: 24px;
+  --font-body-sm-size: 14px;
+  --font-body-sm-line-height: 20px;
+
+  --font-label-md-size: 14px;
+  --font-label-md-line-height: 20px;
+  --font-label-sm-size: 12px;
+  --font-label-sm-line-height: 16px;
+
+  /* Font Weights */
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* ==========================================================================
+     Border Radius
+     ========================================================================== */
+  --radius-sm: 0.25rem;    /* 4px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.75rem;    /* 12px */
+  --radius-xl: 1rem;       /* 16px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-full: 9999px;   /* Pill shape */
+
+  /* ==========================================================================
+     Spacing (8px base grid system)
+     ========================================================================== */
+  --spacing-base: 4px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  --spacing-4xl: 80px;
+
+  --container-max-width: 1280px;
+  --gutter-desktop: 24px;
+  --gutter-mobile: 16px;
+
+  /* ==========================================================================
+     Elevations & Shadows (DESIGN.md)
+     ========================================================================== */
+  --shadow-level-1: 0px 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-level-2: 0px 10px 15px -3px rgba(15, 23, 42, 0.08), 0px 4px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-level-3: 0px 20px 25px -5px rgba(15, 23, 42, 0.12), 0px 8px 10px -6px rgba(15, 23, 42, 0.06);
+  --shadow-cta: 0px 12px 24px -4px rgba(254, 106, 52, 0.35);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-blur: blur(16px);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}

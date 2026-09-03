@@ -1,89 +1,120 @@
 import React from "react";
-import styles from "./Footer.module.css";
 import { Container } from "../ui/Container";
 import { Icon } from "../ui/Icon";
 
 export const Footer: React.FC = () => {
   return (
-    <footer className={styles.footer}>
+    <footer className="bg-surface-container-low border-t border-border-subtle pt-12 md:pt-16">
       <Container>
-        <div className={styles.topGrid}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-8 lg:gap-12 pb-12 md:pb-16">
           {/* Brand Bio */}
-          <div className={styles.brandCol}>
-            <a href="#" className={styles.brand}>
+          <div className="flex flex-col gap-4 sm:col-span-2 lg:col-span-1 max-w-full lg:max-w-90">
+            <a href="#" className="flex items-center gap-1.5 text-xl sm:text-2xl font-extrabold text-primary tracking-tight">
               <span>Nexofood</span>
-              <span className={styles.brandIcon}>
+              <span className="text-secondary-container flex items-center">
                 <Icon name="restaurant" size={24} fill={true} />
               </span>
             </a>
-            <p className={styles.brandBio}>
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
               La plataforma operativa integral para restaurantes modernos.
               Gestiona pedidos, menú y logística desde un solo lugar sin
               comisiones abusivas.
             </p>
-            <div className={styles.socialRow}>
-              <a href="#" className={styles.socialIcon} aria-label="Sitio web global">
+            <div className="flex items-center gap-2 text-on-surface-variant mt-1">
+              <a
+                href="#"
+                className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors hover:bg-primary-container hover:text-white cursor-pointer"
+                aria-label="Sitio web global"
+              >
                 <Icon name="language" size={18} />
               </a>
-              <a href="mailto:contacto@nexofood.io" className={styles.socialIcon} aria-label="Contacto por correo">
+              <a
+                href="mailto:contacto@nexofood.io"
+                className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors hover:bg-primary-container hover:text-white cursor-pointer"
+                aria-label="Contacto por correo"
+              >
                 <Icon name="mail" size={18} />
               </a>
             </div>
           </div>
 
           {/* Col 1: Productos */}
-          <div className={styles.column}>
-            <h4 className={styles.columnTitle}>Productos</h4>
-            <ul className={styles.linkList}>
-              <li className={styles.linkItem}>
-                <a href="#productos">Tienda Online</a>
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <h4 className="text-xs sm:text-sm font-bold text-on-surface">Productos</h4>
+            <ul className="flex flex-col gap-2">
+              <li>
+                <a href="#productos" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Tienda Online
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#productos">Gestor de Pedidos</a>
+              <li>
+                <a href="#productos" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Gestor de Pedidos
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#productos">Logística y Delivery</a>
+              <li>
+                <a href="#productos" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Logística y Delivery
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#productos">Integraciones POS</a>
+              <li>
+                <a href="#productos" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Integraciones POS
+                </a>
               </li>
             </ul>
           </div>
 
           {/* Col 2: Recursos */}
-          <div className={styles.column}>
-            <h4 className={styles.columnTitle}>Recursos</h4>
-            <ul className={styles.linkList}>
-              <li className={styles.linkItem}>
-                <a href="#">Centro de Ayuda</a>
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <h4 className="text-xs sm:text-sm font-bold text-on-surface">Recursos</h4>
+            <ul className="flex flex-col gap-2">
+              <li>
+                <a href="#" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Centro de Ayuda
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#">Blog Gastronómico</a>
+              <li>
+                <a href="#" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Blog Gastronómico
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#casos-de-exito">Casos de Éxito</a>
+              <li>
+                <a href="#casos-de-exito" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Casos de Éxito
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#">Webinars en Vivo</a>
+              <li>
+                <a href="#" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Webinars en Vivo
+                </a>
               </li>
             </ul>
           </div>
 
           {/* Col 3: Compañía */}
-          <div className={styles.column}>
-            <h4 className={styles.columnTitle}>Compañía</h4>
-            <ul className={styles.linkList}>
-              <li className={styles.linkItem}>
-                <a href="#">Sobre Nosotros</a>
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <h4 className="text-xs sm:text-sm font-bold text-on-surface">Compañía</h4>
+            <ul className="flex flex-col gap-2">
+              <li>
+                <a href="#" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Sobre Nosotros
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#">Carreras & Empleos</a>
+              <li>
+                <a href="#" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Carreras & Empleos
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#">Contacto Comercial</a>
+              <li>
+                <a href="#" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Contacto Comercial
+                </a>
               </li>
-              <li className={styles.linkItem}>
-                <a href="#">Programa de Partners</a>
+              <li>
+                <a href="#" className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5">
+                  Programa de Partners
+                </a>
               </li>
             </ul>
           </div>
@@ -91,21 +122,21 @@ export const Footer: React.FC = () => {
       </Container>
 
       {/* Bottom bar */}
-      <div className={styles.bottomBar}>
+      <div className="border-t border-border-subtle py-4">
         <Container>
-          <div className={styles.bottomInner}>
-            <p className={styles.copyright}>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-center sm:text-left">
+            <p className="text-xs text-on-surface-variant">
               © 2026 Nexofood Technologies. Potenciando la industria gastronómica.
             </p>
-            <div className={styles.securityBadges}>
-              <div className={styles.badgeItem}>
-                <span className={styles.badgeIcon}>
+            <div className="flex items-center gap-4 sm:gap-6 text-xs text-on-surface-variant">
+              <div className="flex items-center gap-1.5">
+                <span className="text-primary flex">
                   <Icon name="lock" size={16} />
                 </span>
                 <span>Pagos Seguros PCI-DSS</span>
               </div>
-              <div className={styles.badgeItem}>
-                <span className={styles.badgeIcon}>
+              <div className="flex items-center gap-1.5">
+                <span className="text-primary flex">
                   <Icon name="verified_user" size={16} />
                 </span>
                 <span>SSL 256-bit</span>

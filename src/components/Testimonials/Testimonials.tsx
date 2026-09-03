@@ -1,5 +1,4 @@
 import React from "react";
-import styles from "./Testimonials.module.css";
 import { Container } from "../ui/Container";
 import { SectionWrapper } from "../ui/SectionWrapper";
 import { Icon } from "../ui/Icon";
@@ -44,37 +43,46 @@ export const Testimonials: React.FC = () => {
     <SectionWrapper background="default" padding="lg" id="casos-de-exito">
       <Container>
         {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.pillBadge}>
+        <div className="text-center max-w-190 mx-auto mb-10 md:mb-14 flex flex-col items-center gap-2.5">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-low border border-outline-variant text-primary text-xs font-bold uppercase tracking-wider">
             <Icon name="star" size={16} fill={true} />
             <span>Casos de Éxito</span>
           </div>
-          <h2 className={styles.title}>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight sm:leading-snug">
             Probado y aprobado en cocinas de alto ritmo
           </h2>
-          <p className={styles.subtitle}>
+          <p className="text-sm sm:text-base md:text-lg text-on-surface-variant leading-relaxed">
             Descubre cómo dueños de restaurantes y franquicias transformaron sus
             operaciones diarias y dispararon su rentabilidad neta.
           </p>
         </div>
 
         {/* Testimonials Grid */}
-        <div className={styles.grid}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 max-w-130 lg:max-w-none mx-auto">
           {TESTIMONIALS.map((t, idx) => (
-            <div key={idx} className={styles.card}>
-              <div className={styles.rating} aria-label="Calificación 5 estrellas">
+            <div
+              key={idx}
+              className="bg-surface-container-lowest border border-border-subtle rounded-3xl p-6 sm:p-8 shadow-level-1 flex flex-col justify-between gap-6 transition-all duration-200 hover:-translate-y-1 hover:shadow-level-2 hover:border-primary-container"
+            >
+              <div className="flex gap-0.5 text-amber-500" aria-label="Calificación 5 estrellas">
                 {[...Array(5)].map((_, sIdx) => (
                   <Icon key={sIdx} name="star" size={18} fill={true} />
                 ))}
               </div>
 
-              <p className={styles.quote}>"{t.quote}"</p>
+              <p className="text-sm sm:text-base leading-relaxed text-on-surface italic grow">
+                "{t.quote}"
+              </p>
 
-              <div className={styles.authorWrapper}>
-                <div className={styles.avatar}>{t.initials}</div>
-                <div className={styles.authorInfo}>
-                  <span className={styles.authorName}>{t.author}</span>
-                  <span className={styles.authorRole}>
+              <div className="flex items-center gap-3.5 border-t border-surface-container pt-4">
+                <div className="w-11 h-11 rounded-full bg-linear-to-br from-primary-container to-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
+                  {t.initials}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-on-surface">
+                    {t.author}
+                  </span>
+                  <span className="text-xs text-on-surface-variant">
                     {t.role} · {t.location}
                   </span>
                 </div>

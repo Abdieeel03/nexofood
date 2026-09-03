@@ -1,5 +1,4 @@
 import React from "react";
-import styles from "./Pricing.module.css";
 import { Container } from "../ui/Container";
 import { SectionWrapper } from "../ui/SectionWrapper";
 import { Button } from "../ui/Button";
@@ -80,48 +79,59 @@ export const Pricing: React.FC = () => {
     <SectionWrapper background="surface" padding="lg" id="precios">
       <Container>
         {/* Header */}
-        <div className={styles.header}>
-          <div className={styles.pillBadge}>
+        <div className="text-center max-w-190 mx-auto mb-10 md:mb-14 flex flex-col items-center gap-2.5">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-low border border-outline-variant text-primary text-xs font-bold uppercase tracking-wider">
             <Icon name="payments" size={16} fill={true} />
             <span>Precios Transparentes</span>
           </div>
-          <h2 className={styles.title}>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight sm:leading-snug">
             Planes flexibles sin comisiones abusivas
           </h2>
-          <p className={styles.subtitle}>
+          <p className="text-sm sm:text-base md:text-lg text-on-surface-variant leading-relaxed">
             Empieza gratis, escala cuando lo necesites. Sin contratos de
             permanencia forzada.
           </p>
         </div>
 
         {/* Pricing Grid */}
-        <div className={styles.grid}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 max-w-120 lg:max-w-none mx-auto items-stretch">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`${styles.card} ${
-                plan.featured ? styles.cardFeatured : ""
-              }`}
+              className={`bg-surface-container-lowest rounded-3xl p-6 sm:p-8 flex flex-col justify-between gap-6 transition-all duration-200 relative hover:-translate-y-1 ${plan.featured
+                ? "border-2 border-primary-container shadow-[0_8px_30px_rgba(16,185,129,0.15)]"
+                : "border border-border-subtle shadow-level-1 hover:shadow-level-2"
+                }`}
             >
               {plan.featured && (
-                <div className={styles.featuredBadge}>Más Popular</div>
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-secondary-container text-on-secondary text-[11px] font-extrabold uppercase tracking-wider py-1 px-3.5 rounded-full shadow-[0_2px_8px_rgba(254,106,52,0.3)]">
+                  Más Popular
+                </div>
               )}
 
-              <div className={styles.cardHead}>
-                <h3 className={styles.planName}>{plan.name}</h3>
-                <p className={styles.planDescription}>{plan.description}</p>
-                <div className={styles.priceWrapper}>
-                  <span className={styles.priceAmount}>{plan.price}</span>
+              <div className="flex flex-col gap-1.5">
+                <h3 className="text-xl sm:text-2xl font-bold text-on-surface">
+                  {plan.name}
+                </h3>
+                <p className="text-xs sm:text-sm text-on-surface-variant min-h-9">
+                  {plan.description}
+                </p>
+                <div className="flex items-baseline gap-1 my-3 sm:my-4">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-on-surface leading-none">
+                    {plan.price}
+                  </span>
                   {plan.period && (
-                    <span className={styles.pricePeriod}>{plan.period}</span>
+                    <span className="text-xs sm:text-sm text-on-surface-variant">
+                      {plan.period}
+                    </span>
                   )}
                 </div>
               </div>
 
-              <div className={styles.featureList}>
+              <div className="flex flex-col gap-3 border-t border-surface-container pt-4 grow mb-2">
                 {plan.features.map((feat, fIdx) => (
-                  <div key={fIdx} className={styles.featureItem}>
-                    <span className={styles.featureIcon}>
+                  <div key={fIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-on-surface">
+                    <span className="text-primary-container flex shrink-0 mt-0.5">
                       <Icon name="check_circle" size={18} fill={true} />
                     </span>
                     <span>{feat}</span>

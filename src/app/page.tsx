@@ -13,9 +13,9 @@ import { Footer } from "@/components/Footer";
 
 export default function LandingPage() {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <main style={{ flex: 1 }}>
+      <main className="grow">
         <Hero />
         <SocialProof />
         <ImpactStats />

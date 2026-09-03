@@ -1,5 +1,4 @@
 import React from "react";
-import styles from "./Features.module.css";
 import { Container } from "../ui/Container";
 import { SectionWrapper } from "../ui/SectionWrapper";
 import { Icon } from "../ui/Icon";
@@ -68,36 +67,45 @@ export const Features: React.FC = () => {
     <SectionWrapper background="default" padding="lg" id="productos">
       <Container>
         {/* Section Header */}
-        <div className={styles.header}>
-          <div className={styles.pillBadge}>
+        <div className="text-center max-w-190 mx-auto mb-10 md:mb-14 flex flex-col items-center gap-2.5">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container-low border border-outline-variant text-primary text-xs font-bold uppercase tracking-wider">
             <Icon name="bolt" size={16} fill={true} />
             <span>Productos Nexofood</span>
           </div>
-          <h2 className={styles.title}>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight leading-tight sm:leading-snug">
             Todo lo que necesitas para escalar tu gastronomía
           </h2>
-          <p className={styles.subtitle}>
+          <p className="text-sm sm:text-base md:text-lg text-on-surface-variant leading-relaxed">
             Módulos integrados creados específicamente para eliminar los cuellos
             de botella reales en cocina, delivery y rentabilidad.
           </p>
         </div>
 
         {/* 2x2 Feature Grid */}
-        <div className={styles.grid}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           {FEATURES.map((feature, idx) => (
-            <div key={idx} className={styles.card}>
-              <div className={styles.cardTop}>
-                <div className={styles.iconWrapper}>
+            <div
+              key={idx}
+              className="group bg-surface-container-lowest border border-border-subtle rounded-3xl p-6 sm:p-8 shadow-level-1 flex flex-col gap-4 transition-all duration-200 relative overflow-hidden hover:-translate-y-1 hover:shadow-level-2 hover:border-primary-container"
+            >
+              <div className="flex justify-between items-center">
+                <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-surface-container text-primary flex items-center justify-center transition-colors duration-200 group-hover:bg-primary-container group-hover:text-white">
                   <Icon name={feature.icon} size={28} />
                 </div>
-                <span className={styles.tag}>{feature.tag}</span>
+                <span className="text-[11px] font-bold tracking-wider py-1 px-2.5 rounded-full bg-surface-container-low text-secondary-container border border-secondary-container/20">
+                  {feature.tag}
+                </span>
               </div>
-              <h3 className={styles.cardTitle}>{feature.title}</h3>
-              <p className={styles.cardDescription}>{feature.description}</p>
-              <div className={styles.bulletList}>
+              <h3 className="text-xl sm:text-2xl font-bold text-on-surface">
+                {feature.title}
+              </h3>
+              <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
+                {feature.description}
+              </p>
+              <div className="flex flex-col gap-2.5 pt-3 border-t border-surface-container">
                 {feature.bullets.map((bullet, bIdx) => (
-                  <div key={bIdx} className={styles.bulletItem}>
-                    <span className={styles.bulletIcon}>
+                  <div key={bIdx} className="flex items-center gap-2 text-xs sm:text-sm text-on-surface font-semibold">
+                    <span className="text-primary-container flex shrink-0">
                       <Icon name="check_circle" size={16} fill={true} />
                     </span>
                     <span>{bullet}</span>

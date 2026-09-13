@@ -1,6 +1,6 @@
 import React from "react";
-import { Container } from "../ui/Container";
-import { Button } from "../ui/Button";
+import { Container } from "@/components/ui/Container";
+import { Button } from "@/components/ui/Button";
 
 export const FinalCTA: React.FC = () => {
   return (

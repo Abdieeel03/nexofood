@@ -1,8 +1,8 @@
 import React from "react";
-import { Container } from "../ui/Container";
-import { SectionWrapper } from "../ui/SectionWrapper";
-import { Button } from "../ui/Button";
-import { Icon } from "../ui/Icon";
+import { Container } from "@/components/ui/Container";
+import { SectionWrapper } from "@/components/ui/SectionWrapper";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 
 interface Plan {
   id: string;

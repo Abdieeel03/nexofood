@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Container } from "../ui/Container";
-import { Button } from "../ui/Button";
-import { Icon } from "../ui/Icon";
+import { Container } from "@/components/ui/Container";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 
 export const Hero: React.FC = () => {
   const [email, setEmail] = useState("");

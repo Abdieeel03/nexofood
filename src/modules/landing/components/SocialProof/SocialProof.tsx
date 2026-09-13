@@ -1,6 +1,6 @@
 import React from "react";
-import { Container } from "../ui/Container";
-import { SectionWrapper } from "../ui/SectionWrapper";
+import { Container } from "@/components/ui/Container";
+import { SectionWrapper } from "@/components/ui/SectionWrapper";
 
 const BRANDS = [
   "BurgerKing",

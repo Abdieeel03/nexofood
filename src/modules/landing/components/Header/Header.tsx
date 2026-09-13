@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Container } from "../ui/Container";
-import { Button } from "../ui/Button";
-import { Icon } from "../ui/Icon";
+import { Container } from "@/components/ui/Container";
+import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 
 export const Header: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,7 +67,7 @@ export const Header: React.FC = () => {
           {/* Actions */}
           <div className="flex items-center gap-3 md:gap-4">
             <a
-              href="#login"
+              href="/login"
               className="hidden lg:inline-block text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-surface-container px-3 py-2 rounded-lg transition-colors"
             >
               Iniciar sesión
@@ -133,7 +133,7 @@ export const Header: React.FC = () => {
             variant="outline"
             fullWidth
             size="md"
-            href="#login"
+            href="/login"
             onClick={closeMenu}
           >
             Iniciar sesión

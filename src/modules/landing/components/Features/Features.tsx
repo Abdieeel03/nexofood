@@ -1,7 +1,7 @@
 import React from "react";
-import { Container } from "../ui/Container";
-import { SectionWrapper } from "../ui/SectionWrapper";
-import { Icon } from "../ui/Icon";
+import { Container } from "@/components/ui/Container";
+import { SectionWrapper } from "@/components/ui/SectionWrapper";
+import { Icon } from "@/components/ui/Icon";
 
 interface FeatureCard {
   icon: string;

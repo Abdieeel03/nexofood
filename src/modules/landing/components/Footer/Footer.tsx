@@ -1,6 +1,6 @@
 import React from "react";
-import { Container } from "../ui/Container";
-import { Icon } from "../ui/Icon";
+import { Container } from "@/components/ui/Container";
+import { Icon } from "@/components/ui/Icon";
 
 export const Footer: React.FC = () => {
   return (

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { isAuthenticated } from "@/lib/auth-cookies";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
@@ -7,11 +9,17 @@ const navItems = [
   { label: "Configuración", href: "/settings", icon: "settings" },
 ];
 
-export default function SaaSLayout({
+export default async function SaaSLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isUserAuthenticated = await isAuthenticated();
+
+  if (!isUserAuthenticated) {
+    redirect("/login");
+  }
+
   return (
     <div className="min-h-screen flex bg-surface">
       {/* Sidebar */}

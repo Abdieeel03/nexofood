@@ -71,7 +71,7 @@ export const Testimonials: React.FC = () => {
               </div>
 
               <p className="text-sm sm:text-base leading-relaxed text-on-surface italic grow">
-                "{t.quote}"
+                &quot;{t.quote}&quot;
               </p>
 
               <div className="flex items-center gap-3.5 border-t border-surface-container pt-4">

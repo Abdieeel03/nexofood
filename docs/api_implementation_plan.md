@@ -120,48 +120,120 @@ nexofood/
 
 ### 4.1. Esquemas Zod y Contratos DTO (`src/schemas/`)
 
-Mapeo directo de las interfaces documentadas en [API_DOCUMENTATION.md](./document/API_DOCUMENTATION.md):
+Mapeo directo de las interfaces documentadas en [API_DOCUMENTATION.md](./document/API_DOCUMENTATION.md) implementadas con validación estricta en tiempo de ejecución:
 
-1. **Autenticación:**
-   - `RegisterRequestSchema`: `email`, `password`, `fullName`, `phone`.
-   - `AuthResponseSchema`: `accessToken`, `refreshToken`, `tokenType`, `expiresIn`.
-   - `UserUpdateSchema` y `CustomerAddressSchema`.
-2. **Catálogo:**
-   - `CategoryCreateSchema`: `name`, `description`.
-   - `ProductCreateSchema`: `categoryId`, `name`, `description`, `price`, `imageUrl`, `isAvailable`.
-   - `ProductResponseSchema`.
-3. **Carrito:**
-   - `CartItemRequestSchema`: `productId`, `quantity`, `notes`.
-   - `CartItemResponseSchema`.
-4. **Órdenes:**
-   - `OrderCreateSchema`: `orderData`, items, montos y direcciones.
+1. **Autenticación (`src/schemas/auth.schema.ts`):**
+   - `loginSchema`: Validación de `email` y `password` (mínimo 8 caracteres).
+   - `registerSchema`: Extensión con `fullName`, confirmación de contraseña emparejada (`refine`) y `phone` opcional.
+   - `authResponseSchema`: `accessToken`, `refreshToken`, `tokenType` ("Bearer"), `expiresIn`.
+   - `userUpdateSchema` y `userResponseSchema`: DTOs para perfil de usuario y roles (`CUSTOMER`, `ADMIN`, `RESTAURANT_OWNER`).
+   - `customerAddressSchema`: Estructura para direcciones de entrega.
 
-### 4.2. Cliente de API Centralizado (`src/lib/api-client.ts`)
+2. **Catálogo (`src/schemas/catalog.schema.ts`):**
+   - `categoryCreateSchema` y `categoryResponseSchema`: Gestión de categorías de platos.
+   - `productCreateSchema`: `categoryId`, `name`, `description`, `price` (positivo), `imageUrl`, `isAvailable`.
+   - `productUpdateSchema`: Actualización parcial (`.partial()`).
+   - `productResponseSchema`: DTO completo de producto devuelto por el backend.
 
-Un wrapper universal sobre `fetch` que:
-- Inyecta automáticamente el token `Bearer ${token}` (desde cookies en Server Components / Server Actions o desde cabeceras seguras).
-- Maneja códigos de error comunes (400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 500 Server Error).
-- Auto-renueva el token llamando al endpoint de refresh cuando se recibe un 401.
+3. **Carrito (`src/schemas/cart.schema.ts`):**
+   - `cartItemRequestSchema`: `productId`, `quantity` (entero >= 1) y `notes`.
+   - `cartItemResponseSchema`: Detalle de ítem en carrito con subtotal y datos del producto.
+   - `cartResponseSchema`: Agregado general del carrito con `subtotal` y `total`.
 
-### 4.3. Flujo de Autenticación y Sesión Segura
+4. **Órdenes (`src/schemas/order.schema.ts`):**
+   - `orderItemRequestSchema` y `orderCreateSchema`: Creación de pedidos con items, método de pago (`CASH`, `CARD`, `TRANSFER`) y dirección.
+   - `orderResponseSchema`: DTO con estados de pedido (`PENDING`, `CONFIRMED`, `PREPARING`, `READY`, `DELIVERED`, `CANCELLED`).
+
+5. **Barrel Export (`src/schemas/index.ts`):**
+   - Centraliza todas las definiciones para importación limpia en cualquier módulo.
+
+---
+
+### 4.2. Cliente de API Centralizado y Modular (`src/lib/api-client.ts` y `src/lib/api-server.ts`)
+
+Para permitir libertad en la elección de la librería de datos sin bloquear el desarrollo, la capa HTTP se ha diseñado con **campos libres a edición** mediante un contrato desacoplado:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    Capa de Consumo                          │
+│   (Server Actions / Server Components / Hooks / Componentes)│
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+               ┌───────────────┴───────────────┐
+               ▼                               ▼
+     [src/lib/api-server.ts]         [src/lib/api-client.ts]
+     (Inyecta token httpOnly)        (Cliente HTTP universal)
+               │                               │
+               └───────────────┬───────────────┘
+                               ▼
+     ┌───────────────────────────────────────────────────────┐
+     │  [CAMPO LIBRE A EDICIÓN: TRANSPORTE HTTP]             │
+     │  • Opción A (Activa): Fetch nativo de Next.js 16      │
+     │  • Opción B (Adaptable): Axios Instance               │
+     │  • Opción C (Adaptable): TanStack Query Wrapper       │
+     └───────────────────────────────────────────────────────┘
+```
+
+#### Opciones de Transporte (Libres a Edición):
+
+- **Opción A: Fetch Nativo (Por defecto actual):**
+  - Cero dependencias adicionales.
+  - Integrado de forma nativa con el sistema de caché y revalidación de Next.js 16 (`next: { tags: [...] }`).
+  - Compatible con Server Components y Client Components.
+
+- **Opción B: Axios (Plantilla preparada en `src/lib/api-client.ts`):**
+  - Para activar si se prefiere la sintaxis de interceptores de Axios:
+    ```bash
+    npm install axios
+    ```
+  - Configuración requerida: `withCredentials: true` para respetar el transporte de cookies del navegador.
+
+- **Opción C: TanStack Query / React Query (Plantilla preparada):**
+  - Para activar si se requiere gestión de estado asíncrono avanzado en el cliente (cache en memoria, reintentos automáticos, refetch on window focus):
+    ```bash
+    npm install @tanstack/react-query
+    ```
+  - Se integra directamente reutilizando las funciones de `apiClient` como `queryFn` o `mutationFn`.
+
+---
+
+### 4.3. Arquitectura de Seguridad: Tokens en Cookies `httpOnly`
+
+Por requerimiento estricto de seguridad, los tokens de autenticación **NUNCA** se almacenan en `localStorage` ni en cookies legibles por JavaScript en el cliente, eliminando vulnerabilidades XSS.
+
+#### Políticas de Cookies de Sesión (`src/lib/auth-cookies.ts`):
+
+| Parámetro | Valor | Propósito de Seguridad |
+| :--- | :--- | :--- |
+| `httpOnly` | `true` | Inaccesible mediante `document.cookie` desde scripts del navegador. Previene robo de sesión por XSS. |
+| `secure` | `process.env.NODE_ENV === 'production'` | Solo se transmite a través de conexiones seguras HTTPS en producción. |
+| `sameSite` | `'lax'` | Protege contra ataques CSRF (Cross-Site Request Forgery) permitiendo navegación natural de enlaces. |
+| `path` | `'/'` | Disponible en todos los endpoints y páginas del aplicativo. |
+| `maxAge` (Access Token) | `expiresIn` (ej. 3600s / 1 hora) | Tiempo de vida corto para minimizar impacto en caso de compromiso. |
+| `maxAge` (Refresh Token)| 7 días (`604800s`) | Permite regenerar el access token sin forzar re-login frecuente. |
+
+#### Flujo de Operación Server-Side (Next.js 16):
+- En Next.js 16, la función `cookies()` de `next/headers` es **asíncrona** (`await cookies()`).
+- Las cookies de sesión se leen y escriben únicamente en el contexto del servidor (Server Actions o Route Handlers).
+- `apiServer` extrae el `accessToken` de la cookie `httpOnly` en el servidor y lo inyecta en el header `Authorization: Bearer <token>` hacia el backend de Nexofood.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Usuario
-    participant LoginClient as LoginForm ('use client')
-    participant ServerAction as loginAction (Next.js Server)
-    participant BackendAPI as Nexofood API Backend
-    participant CookieStore as HTTP Cookies (httpOnly)
+    participant Client as Componente Cliente ('use client')
+    participant ServerAction as Server Action (Next.js)
+    participant AuthCookies as Helper Cookies httpOnly
+    participant BackendAPI as Backend Nexofood API
 
-    Usuario->>LoginClient: Ingresa email y contraseña
-    LoginClient->>LoginClient: Validación Zod en cliente
-    LoginClient->>ServerAction: Invoca Server Action con datos
+    Usuario->>Client: Envía formulario de Login
+    Client->>ServerAction: loginAction(credentials)
     ServerAction->>BackendAPI: POST /api/auth/login
     BackendAPI-->>ServerAction: 200 OK (accessToken, refreshToken)
-    ServerAction->>CookieStore: Set-Cookie: token (httpOnly, Secure, SameSite=Lax)
-    ServerAction-->>LoginClient: { success: true }
-    LoginClient->>Usuario: Redirección automática a /dashboard
+    ServerAction->>AuthCookies: setAuthCookies({ accessToken, refreshToken })
+    Note over AuthCookies: Set-Cookie: nexofood_access_token (httpOnly, Secure, Lax)<br/>Set-Cookie: nexofood_refresh_token (httpOnly, Secure, Lax)
+    ServerAction-->>Client: { success: true }
+    Client->>Usuario: Redirección autorizada al SaaS
 ```
 
 ---
@@ -175,21 +247,22 @@ sequenceDiagram
 - [x] Crear el grupo de rutas `src/app/(auth)/` con las pantallas `login/page.tsx` y `register/page.tsx`.
 - [x] Crear el grupo de rutas `src/app/(saas)/` con su `layout.tsx` (Sidebar de navegación, Topbar y zona de contenido).
 
-### Fase 2: Capa de Tipos, DTOs y Cliente HTTP
-- [ ] Configurar variables de entorno (`NEXT_PUBLIC_API_URL` y `API_INTERNAL_URL` en `.env.local`).
-- [ ] Implementar los esquemas Zod en `src/schemas/`:
-  - [ ] `auth.schema.ts` (Register, Login, UserUpdate, Address).
-  - [ ] `catalog.schema.ts` (Category, Product).
-  - [ ] `cart.schema.ts` (CartItem, CartResponse).
-  - [ ] `order.schema.ts` (OrderCreate, OrderItem).
-- [ ] Crear `src/lib/api-client.ts` con manejo unificado de headers, tokens y tipado genérico con validación Zod opcional.
-- [ ] Configurar el helper de cookies de servidor para lectura/escritura de sesión en Next.js.
+### Fase 2: Capa de Tipos, DTOs y Cliente HTTP ✅ COMPLETADA
+- [x] Configurar variables de entorno (`NEXT_PUBLIC_API_URL` y `API_INTERNAL_URL` en `.env.local` y `.env.example`).
+- [x] Implementar los esquemas Zod en `src/schemas/`:
+  - [x] `auth.schema.ts` (Login, Register, UserUpdate, UserResponse, CustomerAddress).
+  - [x] `catalog.schema.ts` (CategoryCreate, CategoryResponse, ProductCreate, ProductUpdate, ProductResponse).
+  - [x] `cart.schema.ts` (CartItemRequest, CartItemResponse, CartResponse).
+  - [x] `order.schema.ts` (OrderItemRequest, OrderCreate, OrderItemResponse, OrderResponse).
+  - [x] `index.ts` (Re-exportación unificada de todos los esquemas y tipos inferidos).
+- [x] Implementar `src/lib/auth-cookies.ts` para almacenamiento seguro de tokens en cookies `httpOnly` (asíncrono para Next.js 16).
+- [x] Crear `src/lib/api-client.ts` con manejo unificado de headers, validación Zod y arquitectura desacoplada (campos libres a edición para Fetch nativo, Axios o TanStack Query).
+- [x] Crear `src/lib/api-server.ts` con inyección automática de tokens `httpOnly` para llamadas seguras en Server Actions y Server Components.
 
 ### Fase 3: Módulo de Autenticación y Middleware
 - [ ] Crear Server Action `loginAction` y `registerAction` conectadas a `/api/auth/register` y `/api/auth/login`.
 - [ ] Implementar el formulario `LoginForm` con React Hook Form + Zod, gestión de estados de error y spinners.
-- [ ] Implementar el formulario `RegisterForm`.
-- [ ] Crear el `middleware.ts` en la raíz de `src/` para verificar el token de sesión y proteger todas las rutas bajo `/(saas)/...`.
+- [x] Crear el proxy/middleware (`src/proxy.ts`, convención Next.js 16) y protección server-side en `SaaSLayout` para verificar el token de sesión y proteger todas las rutas bajo `/(saas)/...`.
 - [ ] Implementar el botón y Server Action de *"Cerrar sesión"*, que elimine las cookies y redirija a `/login`.
 
 ### Fase 4: Módulo de Catálogo en el SaaS

@@ -5,7 +5,8 @@ import { AUTH_COOKIE_NAME } from "./lib/auth-cookies";
 const protectedRoutes = ["/dashboard", "/catalog", "/orders", "/settings"];
 const authRoutes = ["/login", "/register"];
 
-export function proxy(request: NextRequest) {
+// Agregamos 'default' aquí 👇
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const isAuthenticated = Boolean(token);

@@ -1,42 +1,45 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME } from "./lib/auth-cookies";
+'use server'
 
-const protectedRoutes = ["/dashboard", "/catalog", "/orders", "/settings"];
-const authRoutes = ["/login", "/register"];
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { apiClient } from '@/lib/api-client'; 
+import { loginSchema, registerSchema, type RegisterInput } from '@/schemas/auth.schema';
+import * as z from 'zod';
+// Importamos la constante del nombre de la cookie
+import { AUTH_COOKIE_NAME } from '@/lib/auth-cookies';
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  const isAuthenticated = Boolean(token);
+export async function loginAction(data: z.infer<typeof loginSchema>) {
+  try {
+    const response = await apiClient.post<{ token: string }>('/api/auth/login', data);
+    
+    const cookieStore = await cookies();
+    
+    // Usamos AUTH_COOKIE_NAME aquí
+    cookieStore.set(AUTH_COOKIE_NAME, response.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
 
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-  const isAuthRoute = authRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-
-  if (isProtectedRoute && !isAuthenticated) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Credenciales inválidas' };
   }
-
-  if (isAuthRoute && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  return NextResponse.next();
 }
 
-export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/catalog/:path*",
-    "/orders/:path*",
-    "/settings/:path*",
-    "/login",
-    "/register",
-  ],
-};
+export async function registerAction(data: RegisterInput) {
+  try {
+    await apiClient.post('/api/auth/register', data);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Error al registrar el usuario' };
+  }
+}
+
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  // Usamos AUTH_COOKIE_NAME aquí también
+  cookieStore.delete(AUTH_COOKIE_NAME);
+  redirect('/login');
+}

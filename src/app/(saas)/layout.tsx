@@ -62,19 +62,36 @@ export default async function SaaSLayout({
       {/* Main content */}
       <div className="flex-1 flex flex-col">
         {/* Topbar */}
-        <header className="h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center justify-between px-6">
-          <div className="lg:hidden">
-            <span className="text-lg font-extrabold text-primary">Nexofood</span>
-          </div>
-          <div className="hidden lg:block" />
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-on-surface-variant font-semibold">
-              Mi Restaurante
-            </span>
-            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
-              <span className="text-xs font-bold text-on-primary-container">MR</span>
+        <header className="bg-surface-container-lowest border-b border-outline-variant">
+          <div className="h-16 flex items-center justify-between px-6">
+            <div className="lg:hidden">
+              <span className="text-lg font-extrabold text-primary">Nexofood</span>
+            </div>
+            <div className="hidden lg:block" />
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-on-surface-variant font-semibold">
+                Mi Restaurante
+              </span>
+              <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
+                <span className="text-xs font-bold text-on-primary-container">MR</span>
+              </div>
             </div>
           </div>
+
+          <nav className="lg:hidden px-4 pb-3 flex gap-2 overflow-x-auto">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2 rounded-full border border-outline-variant px-3 py-2 text-xs font-semibold text-on-surface-variant whitespace-nowrap"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         </header>
 
         {/* Page content */}

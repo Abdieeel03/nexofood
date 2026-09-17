@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth-cookies";
+import { LogoutButton } from "@/components/ui/Button";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
@@ -47,15 +48,7 @@ export default async function SaaSLayout({
           ))}
         </nav>
         <div className="p-4 border-t border-outline-variant">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-sm text-outline hover:text-primary transition-colors"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              logout
-            </span>
-            Cerrar sesión
-          </Link>
+          <LogoutButton />
         </div>
       </aside>
 

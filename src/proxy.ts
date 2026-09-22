@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { AUTH_COOKIE_NAME } from "./lib/auth-cookies";
 
-const protectedRoutes = ["/dashboard", "/catalog", "/orders", "/settings"];
+const protectedRoutes = [
+  "/dashboard",
+  "/catalog",
+  "/orders",
+  "/inventory",
+  "/employees",
+  "/settings",
+];
 const authRoutes = ["/login", "/register"];
 
 // Agregamos 'default' aquí 👇
@@ -11,6 +18,11 @@ export default function proxy(request: NextRequest) {
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   const isAuthenticated = Boolean(token);
 
+  // Modo Dev: si estamos en desarrollo o NEXT_PUBLIC_DEV_MODE=true, permitimos navegar sin login
+  const isDevMode =
+    process.env.NODE_ENV !== "production" ||
+    process.env.NEXT_PUBLIC_DEV_MODE === "true";
+
   const isProtectedRoute = protectedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
@@ -18,7 +30,7 @@ export default function proxy(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
-  if (isProtectedRoute && !isAuthenticated) {
+  if (isProtectedRoute && !isAuthenticated && !isDevMode) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
@@ -36,6 +48,8 @@ export const config = {
     "/dashboard/:path*",
     "/catalog/:path*",
     "/orders/:path*",
+    "/inventory/:path*",
+    "/employees/:path*",
     "/settings/:path*",
     "/login",
     "/register",

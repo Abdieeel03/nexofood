@@ -1,8 +1,8 @@
 # Documentación de la API (Nexofood API)
 
 > [!NOTE]
-> **Estado Actual:** El proyecto tiene definidas las entidades de dominio, los repositorios y los DTOs (Data Transfer Objects) para Request/Response en los módulos `auth`, `cart`, `catalog`, `order` y `payment`. **Los Controladores REST aún no están implementados**. 
-> La siguiente documentación define el **contrato de la API proyectado** en base a los DTOs existentes en el código fuente actual.
+> **Estado Actual:** Este repositorio contiene la aplicación frontend de Next.js y los endpoints backend aquí descritos **aún no están implementados en este código fuente**.
+> La siguiente documentación define el **contrato de la API proyectado** para los módulos `auth`, `cart`, `catalog`, `order` y `payment`.
 
 ---
 
@@ -25,6 +25,32 @@
   "refreshToken": "d8f9e...",
   "tokenType": "Bearer",
   "expiresIn": 3600
+}
+```
+
+### [POST] /api/auth/login
+*Autentica un usuario y devuelve los tokens de sesión.*
+
+| Nombre | Tipo | Ubicación | Obligatorio | Descripción |
+|--------|------|-----------|-------------|-------------|
+| `email` | String | Body | Sí | Correo electrónico del usuario (formato válido, max 255). |
+| `password` | String | Body | Sí | Contraseña del usuario. |
+
+```json
+// 200 OK (AuthResponse esperado)
+{
+  "accessToken": "eyJhbG...",
+  "refreshToken": "d8f9e...",
+  "tokenType": "Bearer",
+  "expiresIn": 3600
+}
+```
+
+```json
+// 401 Unauthorized (credenciales inválidas)
+{
+  "success": false,
+  "error": "Credenciales inválidas."
 }
 ```
 
@@ -127,7 +153,7 @@
 | `orderData` | Object | Body | Sí | Datos provenientes de `OrderCreateRequest` y `OrderItemRequest`. |
 
 ```json
-// 200 OK (Ejemplo ilustrativo de fallo)
+// 422 Unprocessable Entity (Ejemplo ilustrativo de fallo de validación)
 {
   "success": false,
   "error": "Error de validación: El campo X es obligatorio."

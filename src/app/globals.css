@@ -163,3 +163,12 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-outline);
 }
+
+/* Oculta scrollbar en carruseles horizontales */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

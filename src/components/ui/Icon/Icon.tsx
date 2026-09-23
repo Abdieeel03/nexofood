@@ -22,13 +22,13 @@ export const Icon: React.FC<IconProps> = ({
   const customStyle: React.CSSProperties = {
     fontSize: typeof size === "number" ? `${size}px` : size,
     fontVariationSettings: `'FILL' ${fill ? 1 : 0}, 'wght' ${weight}`,
-    color: color || "currentColor",
     lineHeight: 1,
     userSelect: "none",
     verticalAlign: "middle",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
+    ...(color ? { color } : {}),
     ...style,
   };
 

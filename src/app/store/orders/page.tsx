@@ -1,5 +1,3 @@
-'use client'
-
 import { ProfileLayout } from "@/modules/store/components/ProfileLayout";
 import { OrdersView } from "@/modules/store/components/OrdersView";
 

@@ -12,6 +12,24 @@ export type CheckoutPayload = {
   deliveryAddress: string;
 };
 
-export type RestaurantFilters = { promos: boolean; topRated: boolean; fast: boolean };
+export type Restaurant = {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  deliveryTime: string; // texto para mostrar, ej. "20 - 35 min"
+  minutes: number; // tiempo máximo en minutos, para filtrar/ordenar
+  deliveryFee: string;
+  image: string;
+  logo?: string;
+  promo?: string;
+  featured?: boolean; // aparece en "Los más elegidos"
+};
+
+export type RestaurantFilters = {
+  promos: boolean;
+  topRated: boolean;
+  fast: boolean;
+};
 
 export type SortOption = "relevance" | "rating" | "time";

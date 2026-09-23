@@ -1,49 +1,81 @@
-import { create } from 'zustand';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import type { StoreRef } from "@/modules/store/schemas/store.chema";
 
 export type CartItem = {
-  id: string;
+  productId: string;
   name: string;
-  price: number;
+  unitPrice: number;
   quantity: number;
-  restaurantName?: string;
+  image?: string;
 };
+
+type NewCartItem = Omit<CartItem, "quantity">;
 
 type CartState = {
-  cart: CartItem[];
-  orders: any[];
-  addToCart: (item: Omit<CartItem, 'quantity'>, restaurantName?: string) => void;
-  removeFromCart: (id: string) => void;
-  clearCart: () => void;
+  /** Tienda dueña del carrito: un carrito pertenece a una sola tienda. */
+  store: StoreRef | null;
+  items: CartItem[];
+  /** Producto de otra tienda que espera confirmación para reemplazar el carrito. */
+  pending: { store: StoreRef; item: NewCartItem } | null;
+
+  addItem: (store: StoreRef, item: NewCartItem) => void;
+  /** Resta una unidad; si llega a 0 elimina el producto. */
+  removeItem: (productId: string) => void;
+  clear: () => void;
+  confirmReplace: () => void;
+  cancelReplace: () => void;
 };
 
-export const useCartStore = create<CartState>((set) => ({
-  cart: [],
-  orders: [],
-  
-  addToCart: (item, restaurantName) => set((state) => {
-    const existingIndex = state.cart.findIndex((i) => i.id === item.id);
-    if (existingIndex > -1) {
-      const newCart = [...state.cart];
-      newCart[existingIndex].quantity += 1;
-      return { cart: newCart };
+export const useCartStore = create<CartState>()(
+  persist(
+    (set) => ({
+      store: null,
+      items: [],
+      pending: null,
+
+      addItem: (store, item) =>
+        set((state) => {
+          if (state.store && state.store.id !== store.id && state.items.length > 0) {
+            return { pending: { store, item } };
+          }
+          const exists = state.items.some((i) => i.productId === item.productId);
+          const items = exists
+            ? state.items.map((i) => (i.productId === item.productId ? { ...i, quantity: i.quantity + 1 } : i))
+            : [...state.items, { ...item, quantity: 1 }];
+          return { store, items };
+        }),
+
+      removeItem: (productId) =>
+        set((state) => {
+          const items = state.items.flatMap((i) => {
+            if (i.productId !== productId) return [i];
+            return i.quantity > 1 ? [{ ...i, quantity: i.quantity - 1 }] : [];
+          });
+          return { items, store: items.length > 0 ? state.store : null };
+        }),
+
+      clear: () => set({ store: null, items: [], pending: null }),
+
+      confirmReplace: () =>
+        set((state) =>
+          state.pending
+            ? { store: state.pending.store, items: [{ ...state.pending.item, quantity: 1 }], pending: null }
+            : state
+        ),
+
+      cancelReplace: () => set({ pending: null }),
+    }),
+    {
+      name: "nexofood-cart",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ store: state.store, items: state.items }),
+      // Se rehidrata en el cliente (StoreShell) para evitar diferencias con el HTML del servidor
+      skipHydration: true,
     }
-    return { cart: [...state.cart, { ...item, quantity: 1, restaurantName }] };
-  }),
+  )
+);
 
-  removeFromCart: (id) => set((state) => {
-    const existingItem = state.cart.find((i) => i.id === id);
-    if (!existingItem) return state;
-
-    if (existingItem.quantity > 1) {
-      return {
-        cart: state.cart.map((i) => i.id === id ? { ...i, quantity: i.quantity - 1 } : i)
-      };
-    } else {
-      return {
-        cart: state.cart.filter((i) => i.id !== id)
-      };
-    }
-  }),
-
-  clearCart: () => set({ cart: [] })
-}));
+export const selectCartCount = (state: CartState) => state.items.reduce((acc, i) => acc + i.quantity, 0);
+export const selectCartSubtotal = (state: CartState) =>
+  Math.round(state.items.reduce((acc, i) => acc + i.unitPrice * i.quantity, 0) * 100) / 100;

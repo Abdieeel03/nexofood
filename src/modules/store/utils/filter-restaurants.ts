@@ -13,7 +13,8 @@ export function filterRestaurants(restaurants: Restaurant[], { category, search,
   return restaurants
     .filter((res) => {
       const matchesCategory = category === "all" || res.category.toLowerCase() === category.toLowerCase();
-      const matchesSearch = query === "" || res.name.toLowerCase().includes(query);
+      const matchesSearch =
+        query === "" || res.name.toLowerCase().includes(query) || res.category.toLowerCase().includes(query);
       const matchesPromo = !filters.promos || !!res.promo;
       const matchesRating = !filters.topRated || res.rating >= 4.5;
       const matchesFast = !filters.fast || res.minutes <= 30;

@@ -16,6 +16,7 @@ type RestaurantDetailProps = {
 export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ restaurant, menu }) => {
   const sectionIds = useMemo(() => menu.map((s) => s.id), [menu]);
   const activeSectionId = useActiveSection(sectionIds);
+  const { promo } = restaurant;
 
   return (
     <div className="w-full max-w-[1650px] mx-auto px-4 md:px-8 py-6 flex flex-col gap-6 font-sans">
@@ -36,15 +37,17 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ restaurant, 
         />
 
         <div className="flex flex-col gap-8 min-w-0">
-          {restaurant.promo && (
+          {promo && (
             <div className="flex items-center gap-3 bg-tangerine-subtle border border-secondary-container/30 rounded-2xl px-5 py-4">
               <span className="w-10 h-10 shrink-0 rounded-xl bg-secondary-container text-white flex items-center justify-center">
                 <Icon name="sell" size={22} fill />
               </span>
               <div>
-                <p className="font-extrabold text-on-surface">{restaurant.promo}</p>
+                <p className="font-extrabold text-on-surface">{promo.label}</p>
                 <p className="text-xs font-medium text-on-surface-variant">
-                  Disfruta este beneficio en productos seleccionados de {restaurant.name}.
+                  {promo.type === "free_shipping"
+                    ? `Tus pedidos a ${restaurant.name} llegan sin costo de envío.`
+                    : `Disfruta este beneficio en productos seleccionados de ${restaurant.name}.`}
                 </p>
               </div>
             </div>
@@ -54,8 +57,7 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ restaurant, 
             <MenuSectionBlock
               key={section.id}
               section={section}
-              fallbackImage={restaurant.image}
-              restaurantName={restaurant.name}
+              restaurant={restaurant}
             />
           ))}
         </div>

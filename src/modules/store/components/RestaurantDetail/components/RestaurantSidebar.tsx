@@ -1,6 +1,7 @@
 import React from "react";
 import { Icon } from "@/components/ui/Icon";
 import type { MenuSection, Restaurant } from "../../../schemas/store.chema";
+import { formatDeliveryFee } from "../../../utils/format-price";
 
 type RestaurantSidebarProps = {
   restaurant: Restaurant;
@@ -43,7 +44,7 @@ export const RestaurantSidebar: React.FC<RestaurantSidebarProps> = ({ restaurant
               <dt className="flex items-center gap-1.5 text-on-surface-variant">
                 <Icon name="two_wheeler" size={18} className="text-primary" /> Envío
               </dt>
-              <dd className="font-bold text-primary">{res.deliveryFee}</dd>
+              <dd className="font-bold text-primary">{formatDeliveryFee(res.deliveryFee)}</dd>
             </div>
             <div className="flex items-center justify-between px-4 py-2.5">
               <dt className="flex items-center gap-1.5 text-on-surface-variant">

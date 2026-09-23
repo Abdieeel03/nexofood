@@ -1,24 +1,26 @@
 import React from "react";
 import { Icon } from "@/components/ui/Icon";
 import { useCartStore } from "@/stores/cart.store";
-import type { MenuItem } from "../../../schemas/store.chema";
+import type { MenuItem, Restaurant } from "../../../schemas/store.chema";
 import { formatPrice, getDiscountPercent } from "../../../utils/format-price";
+import { toStoreRef } from "../../../utils/store-ref";
 
 type MenuItemCardProps = {
   item: MenuItem;
-  fallbackImage: string;
-  restaurantName: string;
+  restaurant: Restaurant;
 };
 
-export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, fallbackImage, restaurantName }) => {
-  const quantity = useCartStore((state) => state.cart.find((i) => i.id === item.id)?.quantity ?? 0);
-  const addToCart = useCartStore((state) => state.addToCart);
-  const removeFromCart = useCartStore((state) => state.removeFromCart);
+export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, restaurant }) => {
+  const quantity = useCartStore((state) => state.items.find((i) => i.productId === item.id)?.quantity ?? 0);
+  const addItem = useCartStore((state) => state.addItem);
+  const removeItem = useCartStore((state) => state.removeItem);
 
   const discount = getDiscountPercent(item.price, item.oldPrice);
 
+  const image = item.image ?? restaurant.image;
+
   const handleAdd = () =>
-    addToCart({ id: item.id, name: item.name, price: item.price, restaurantName }, restaurantName);
+    addItem(toStoreRef(restaurant), { productId: item.id, name: item.name, unitPrice: item.price, image });
 
   return (
     <article className="flex gap-4 bg-white rounded-2xl border border-border-subtle shadow-level-1 p-4 hover:shadow-level-2 hover:border-primary-container/50 transition-all">
@@ -38,7 +40,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, fallbackImage,
       </div>
 
       <div className="relative shrink-0 w-28 h-28">
-        <img src={item.image ?? fallbackImage} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+        <img src={image} alt={item.name} className="w-full h-full object-cover rounded-xl" />
 
         {quantity === 0 ? (
           <button
@@ -51,7 +53,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, fallbackImage,
         ) : (
           <div className="absolute -bottom-2 -right-2 flex items-center gap-1 bg-white rounded-full shadow-level-2 border border-border-subtle p-0.5">
             <button
-              onClick={() => removeFromCart(item.id)}
+              onClick={() => removeItem(item.id)}
               aria-label={`Quitar una unidad de ${item.name}`}
               className="w-8 h-8 rounded-full text-on-surface hover:bg-surface-container flex items-center justify-center cursor-pointer"
             >

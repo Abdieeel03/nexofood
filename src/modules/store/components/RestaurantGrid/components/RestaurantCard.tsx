@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import type { Restaurant } from "../../../schemas/store.chema";
+import { formatDeliveryFee } from "../../../utils/format-price";
 
 type RestaurantCardProps = {
   restaurant: Restaurant;
@@ -27,7 +28,7 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant: res,
 
           {res.promo && (
             <span className="absolute top-3 left-3 flex items-center gap-1 bg-secondary-container text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-cta">
-              <Icon name="sell" size={14} fill /> {res.promo}
+              <Icon name="sell" size={14} fill /> {res.promo.label}
             </span>
           )}
           <span className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-semibold text-on-surface">
@@ -57,7 +58,7 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant: res,
               <Icon name="schedule" size={16} className="text-primary" /> {res.deliveryTime}
             </span>
             <span className="flex items-center gap-1 text-primary bg-mint-subtle px-2.5 py-1 rounded-lg">
-              <Icon name="two_wheeler" size={16} /> {res.deliveryFee}
+              <Icon name="two_wheeler" size={16} /> {formatDeliveryFee(res.deliveryFee)}
             </span>
           </div>
         </div>

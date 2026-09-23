@@ -33,3 +33,18 @@ export type RestaurantFilters = {
 };
 
 export type SortOption = "relevance" | "rating" | "time";
+
+export type MenuItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  oldPrice?: number; // si existe, se muestra tachado y se calcula el % de descuento
+  image?: string; // si falta, se usa la foto del restaurante
+};
+
+export type MenuSection = {
+  id: string; // se usa como ancla (#id) y para el scroll-spy
+  title: string;
+  items: MenuItem[];
+};

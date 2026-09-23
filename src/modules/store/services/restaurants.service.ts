@@ -46,3 +46,7 @@ export async function getRestaurants(): Promise<Restaurant[]> {
 
 // Versión síncrona mientras todo sea mock (la home es un Client Component)
 export const MOCK_RESTAURANTS = RESTAURANTS;
+
+export async function getRestaurantById(id: string): Promise<Restaurant | undefined> {
+  return RESTAURANTS.find((res) => res.id === id);
+}

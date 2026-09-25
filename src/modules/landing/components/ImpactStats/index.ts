@@ -1,1 +1,0 @@
-export { ImpactStats } from './ImpactStats';

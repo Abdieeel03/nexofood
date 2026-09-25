@@ -8,14 +8,26 @@ import { KanbanBoard } from "@/modules/orders/components/KanbanBoard";
 import { Order } from "@/modules/orders/components/OrderCard";
 import { TicketAuditDrawer } from "@/modules/orders/components/TicketAuditDrawer";
 import { EmptyState } from "@/modules/app/components/EmptyState";
+import { useSaasOrdersQuery } from "@/modules/orders/queries/use-saas-orders-query";
+import { useCreateSaasOrderMutation } from "@/modules/orders/mutations/use-order-mutations";
 
 export default function OrdersPage() {
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [channel, setChannel] = useState<OrderChannel>("all");
-  // Por requerimiento del usuario: estado vacío inicial (sin mock data)
-  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+
+  // Consulta de estado de servidor con TanStack Query
+  const {
+    data: orders = [],
+    isLoading,
+    isError,
+    error,
+    isFetching,
+    refetch,
+  } = useSaasOrdersQuery();
+
+  const createOrderMutation = useCreateSaasOrderMutation();
 
   // Filtrar comandas por canal si hay alguna
   const filteredOrders =
@@ -34,16 +46,30 @@ export default function OrdersPage() {
   const onRouteCount = orders.filter((o) => o.status === "delivered").length;
   const criticalCount = orders.filter((o) => o.isUrgent).length;
 
+  const handleCreateOrder = (newOrder: Order) => {
+    createOrderMutation.mutate(newOrder, {
+      onSuccess: () => setShowNewOrderModal(false),
+    });
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header Operativo */}
-      <OrdersHeader
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onNewOrder={() => setShowNewOrderModal(true)}
-      />
+      {/* Header Operativo con indicador de sincronización en segundo plano */}
+      <div className="flex flex-col gap-2">
+        <OrdersHeader
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onNewOrder={() => setShowNewOrderModal(true)}
+        />
+        {isFetching && !isLoading && (
+          <div className="self-start flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full animate-fade-in">
+            <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+            <span>Sincronizando comandas con el servidor...</span>
+          </div>
+        )}
+      </div>
 
-      {/* Barra de 5 KPI Cards (vacías o dinámicas) */}
+      {/* Barra de 5 KPI Cards (dinámicas conectadas a servidor) */}
       <OrdersKpiBar
         totalActive={orders.length}
         inPrep={inPrepCount}
@@ -65,12 +91,31 @@ export default function OrdersPage() {
       {viewMode === "kanban" ? (
         <KanbanBoard
           orders={filteredOrders}
-          onOrdersChange={setOrders}
           onSelectOrder={setSelectedOrder}
+          isLoading={isLoading}
+          isError={isError}
+          error={error}
+          onRetry={() => refetch()}
         />
       ) : (
         <div className="bg-surface-card rounded-3xl border border-outline-variant/60 p-6 shadow-xs">
-          {filteredOrders.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3 animate-pulse">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-16 bg-surface-container/60 rounded-xl" />
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="text-center py-8">
+              <p className="text-error font-bold mb-2">Error al cargar las comandas</p>
+              <button
+                onClick={() => refetch()}
+                className="px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-bold"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : filteredOrders.length === 0 ? (
             <EmptyState
               icon="receipt_long"
               title="Aún no hay comandas en la lista"
@@ -131,7 +176,7 @@ export default function OrdersPage() {
             </div>
 
             <p className="text-xs text-outline leading-relaxed mb-6">
-              Esta pantalla está lista para integrarse con el formulario de comandas o la API de NexoFood. Puedes registrar una comanda de prueba para verificar el flujo en el tablero.
+              Esta pantalla envía la comanda a la capa de servidor gestionada por TanStack Query con revalidación dirigida.
             </p>
 
             <div className="flex items-center justify-end gap-2.5">
@@ -142,30 +187,27 @@ export default function OrdersPage() {
                 Cancelar
               </button>
               <button
+                disabled={createOrderMutation.isPending}
                 onClick={() => {
                   const newId = `order-${Date.now()}`;
                   const num = Math.floor(100 + Math.random() * 900).toString();
-                  setOrders([
-                    ...orders,
-                    {
-                      id: newId,
-                      ticketNumber: num,
-                      tableOrChannel: `Mesa ${Math.floor(1 + Math.random() * 10)}`,
-                      channel: "dine_in",
-                      status: "new",
-                      elapsedMinutes: 0,
-                      items: [
-                        { name: "Ceviche Mixto Tradicional", quantity: 1 },
-                        { name: "Cusqueña Dorada 330ml", quantity: 2 },
-                      ],
-                      total: 62.0,
-                    },
-                  ]);
-                  setShowNewOrderModal(false);
+                  handleCreateOrder({
+                    id: newId,
+                    ticketNumber: num,
+                    tableOrChannel: `Mesa ${Math.floor(1 + Math.random() * 10)}`,
+                    channel: "dine_in",
+                    status: "new",
+                    elapsedMinutes: 0,
+                    items: [
+                      { name: "Ceviche Mixto Tradicional", quantity: 1 },
+                      { name: "Cusqueña Dorada 330ml", quantity: 2 },
+                    ],
+                    total: 62.0,
+                  });
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-on-primary hover:bg-primary/90 shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-primary text-on-primary hover:bg-primary/90 shadow-xs disabled:opacity-50"
               >
-                Generar Comanda de Prueba
+                {createOrderMutation.isPending ? "Registrando..." : "Generar Comanda"}
               </button>
             </div>
           </div>

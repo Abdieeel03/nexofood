@@ -7,11 +7,19 @@ import {
   DropResult,
 } from "@hello-pangea/dnd";
 import { Order, OrderCard, OrderStatus } from "./OrderCard";
+import {
+  useUpdateOrderStatusMutation,
+  useReorderOrdersMutation,
+  useCreateSaasOrderMutation,
+} from "../mutations/use-order-mutations";
 
 interface KanbanBoardProps {
   orders: Order[];
-  onOrdersChange: (orders: Order[]) => void;
   onSelectOrder: (order: Order) => void;
+  isLoading?: boolean;
+  isError?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
 }
 
 const COLUMNS: {
@@ -53,9 +61,17 @@ const COLUMNS: {
 
 export function KanbanBoard({
   orders,
-  onOrdersChange,
   onSelectOrder,
+  isLoading = false,
+  isError = false,
+  error = null,
+  onRetry,
 }: KanbanBoardProps) {
+  // Mutaciones optimistas de TanStack Query
+  const updateStatusMutation = useUpdateOrderStatusMutation();
+  const reorderMutation = useReorderOrdersMutation();
+  const createOrderMutation = useCreateSaasOrderMutation();
+
   // Evitar desajustes de hidratación SSR con @hello-pangea/dnd
   const isMounted = useSyncExternalStore(
     () => () => {},
@@ -63,13 +79,12 @@ export function KanbanBoard({
     () => false
   );
 
-  // Manejador Drag and Drop
+  // Manejador Drag and Drop con mutación optimista
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
 
-    // Si se soltó en la misma posición exacta
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
@@ -90,33 +105,25 @@ export function KanbanBoard({
       status: targetStatus,
     };
 
-    // Reinsertar en la nueva lista
+    // Reinsertar en la nueva lista y ejecutar mutación optimista
     newOrders.splice(destination.index, 0, updatedOrder);
-    onOrdersChange(newOrders);
+    reorderMutation.mutate(newOrders);
   };
 
-  // Manejador para avanzar comanda con un click
+  // Manejador para avanzar comanda con un click usando mutación optimista
   const handleAdvanceOrder = (orderId: string) => {
-    const orderIndex = orders.findIndex((o) => o.id === orderId);
-    if (orderIndex === -1) return;
+    const currentOrder = orders.find((o) => o.id === orderId);
+    if (!currentOrder) return;
 
-    const currentOrder = orders[orderIndex];
     let nextStatus: OrderStatus = currentOrder.status;
-
     if (currentOrder.status === "new") nextStatus = "in_prep";
     else if (currentOrder.status === "in_prep") nextStatus = "ready";
     else if (currentOrder.status === "ready") nextStatus = "delivered";
 
-    const updatedOrders = [...orders];
-    updatedOrders[orderIndex] = {
-      ...currentOrder,
-      status: nextStatus,
-    };
-
-    onOrdersChange(updatedOrders);
+    updateStatusMutation.mutate({ orderId, status: nextStatus });
   };
 
-  // Generador de comanda de prueba para probar interactividad sin mock permanente
+  // Generador de comanda de prueba usando mutación de TanStack Query
   const handleCreateTestOrder = () => {
     const ticketNum = Math.floor(100 + Math.random() * 900).toString();
     const testOrder: Order = {
@@ -132,10 +139,10 @@ export function KanbanBoard({
       ],
       total: 48.5,
     };
-    onOrdersChange([testOrder, ...orders]);
+    createOrderMutation.mutate(testOrder);
   };
 
-  if (!isMounted) {
+  if (!isMounted || isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
         {COLUMNS.map((col) => (
@@ -144,6 +151,26 @@ export function KanbanBoard({
             className="h-96 rounded-2xl bg-surface-card border border-outline-variant/40"
           />
         ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-surface-card border border-error/20 rounded-3xl p-8 text-center flex flex-col items-center gap-3">
+        <span className="material-symbols-outlined text-error text-3xl">error</span>
+        <p className="font-bold text-on-surface">Error al cargar las comandas</p>
+        <p className="text-xs text-outline max-w-sm">
+          {error?.message || "No se pudo sincronizar el tablero de cocina con el servidor."}
+        </p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="mt-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-bold hover:bg-primary/90"
+          >
+            Reintentar sincronización
+          </button>
+        )}
       </div>
     );
   }
@@ -162,13 +189,14 @@ export function KanbanBoard({
                 Tablero operativo listo para recibir comandas
               </p>
               <p className="text-[11px] text-outline">
-                Aún no cuentas con comandas en curso. Puedes crear una comanda de prueba para probar el arrastre y el avance por clic.
+                Aún no cuentas con comandas en curso. Puedes crear una comanda de prueba para probar las mutaciones optimistas y el arrastre.
               </p>
             </div>
           </div>
           <button
             onClick={handleCreateTestOrder}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all shrink-0"
+            disabled={createOrderMutation.isPending}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all shrink-0 cursor-pointer disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-base">add_circle</span>
             <span>+ Crear comanda de prueba</span>
@@ -176,10 +204,11 @@ export function KanbanBoard({
         </div>
       ) : (
         <div className="flex items-center justify-between text-xs text-outline px-1">
-          <span>{orders.length} comanda(s) en seguimiento. Arrastra las tarjetas o haz clic en avanzar.</span>
+          <span>{orders.length} comanda(s) en seguimiento. Arrastra las tarjetas o haz clic en avanzar (actualización optimista).</span>
           <button
             onClick={handleCreateTestOrder}
-            className="text-primary hover:underline font-semibold flex items-center gap-1"
+            disabled={createOrderMutation.isPending}
+            className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-sm">add</span>
             <span>Agregar otra comanda de prueba</span>

@@ -5,20 +5,23 @@ import { redirect } from 'next/navigation';
 import { apiClient } from '@/lib/api-client'; // Asegúrate de que esta ruta coincida con tu cliente
 import { loginSchema, registerSchema } from '@/schemas/auth.schema';
 import * as z from 'zod';
+import { setAuthCookies, removeAuthCookies } from '@/lib/auth-cookies';
 
 export async function loginAction(data: z.infer<typeof loginSchema>) {
   try {
-    const response = await apiClient.post<{ token: string }>('/api/auth/login', data);
+    const response = await apiClient.post<{ token?: string; accessToken?: string; refreshToken?: string }>(
+      '/api/auth/login',
+      data
+    );
     
-    // 1. Esperamos a que se resuelva la promesa de cookies()
-    const cookieStore = await cookies();
-    
-    // 2. Usamos el set en la variable resuelta
-    cookieStore.set('session_token', response.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
+    const token = response.token || response.accessToken;
+    if (!token) {
+      return { success: false, error: 'Credenciales inválidas' };
+    }
+
+    await setAuthCookies({
+      accessToken: token,
+      refreshToken: response.refreshToken,
     });
 
     return { success: true };
@@ -37,6 +40,7 @@ export async function registerAction(data: z.infer<typeof registerSchema>) {
 }
 
 export async function logoutAction() {
+  await removeAuthCookies();
   const cookieStore = await cookies();
   cookieStore.delete('session_token');
   redirect('/');

@@ -15,7 +15,7 @@ export default async function SaaSLayout({
   if (!isDevMode) {
     const isUserAuthenticated = await isAuthenticated();
     if (!isUserAuthenticated) {
-      redirect("/login");
+      redirect("/");
     }
   }
 

@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import type { PaymentMethod } from "@/schemas/order.schema";
 import { selectCartSubtotal, useCartStore } from "@/stores/cart.store";
-import { useOrdersStore } from "@/stores/orders.store";
 import { useStoreUi } from "@/stores/store-ui.store";
 import { PAYMENT_LABELS, PAYMENT_OPTIONS } from "../../constants";
 import { useOverlay } from "../../hooks/use-overlay";
 import type { StoreOrder } from "../../schemas/store.chema";
-import { createOrder } from "../../services/orders.service";
+import { useCreateOrderMutation } from "../../mutations/use-create-order-mutation";
 import { formatDeliveryFee, formatPrice, roundMoney } from "../../utils/format-price";
 import { MOCK_ADDRESS } from "../Header/constants";
 
@@ -33,7 +32,7 @@ const CheckoutContent: React.FC = () => {
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore(selectCartSubtotal);
   const clearCart = useCartStore((s) => s.clear);
-  const addOrder = useOrdersStore((s) => s.addOrder);
+  const { mutateAsync: createOrderMutate, isPending: isMutating } = useCreateOrderMutation();
 
   const [step, setStep] = useState<Step>("form");
   const [method, setMethod] = useState<PaymentMethod>(PAYMENT_OPTIONS[0].id);
@@ -42,8 +41,8 @@ const CheckoutContent: React.FC = () => {
   const [order, setOrder] = useState<StoreOrder | null>(null);
 
   const handleClose = useCallback(() => {
-    if (step !== "processing") closeCheckout();
-  }, [step, closeCheckout]);
+    if (step !== "processing" && !isMutating) closeCheckout();
+  }, [step, isMutating, closeCheckout]);
 
   useOverlay(true, handleClose);
 
@@ -53,19 +52,20 @@ const CheckoutContent: React.FC = () => {
     setStep("processing");
 
     try {
-      const created = await createOrder({
+      const created = await createOrderMutate({
         store,
         items: items.map(({ productId, name, unitPrice, quantity }) => ({ productId, name, unitPrice, quantity })),
         paymentMethod: method,
         deliveryAddress: MOCK_ADDRESS,
         notes: notes.trim() || undefined,
       });
-      addOrder(created);
       clearCart();
       setOrder(created);
       setStep("success");
-    } catch {
-      setError("No pudimos procesar el pago. Intenta nuevamente.");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "No pudimos procesar el pago. Intenta nuevamente."
+      );
       setStep("form");
     }
   };

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -33,7 +33,7 @@ export default function RegisterPage() {
     if (result.success) {
       setSuccessMessage("¡Registro exitoso! Redirigiendo al login...");
       setTimeout(() => {
-        router.push("/login");
+        router.push("/");
       }, 2000);
     } else {
       setGlobalError(result.error || "Ocurrió un error al intentar registrarte.");
@@ -52,7 +52,6 @@ export default function RegisterPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        
         {/* Campo Nombre completo */}
         <div>
           <label htmlFor="fullName" className="block text-sm font-semibold text-on-surface mb-1">
@@ -110,7 +109,7 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* Campo Confirmar Contraseña (Nuevo, requerido por el Schema) */}
+        {/* Campo Confirmar Contraseña */}
         <div>
           <label htmlFor="confirmPassword" className="block text-sm font-semibold text-on-surface mb-1">
             Confirmar contraseña
@@ -181,16 +180,10 @@ export default function RegisterPage() {
 
       <p className="text-center text-sm text-on-surface-variant mt-6">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/login" className="text-primary font-semibold hover:underline">
+        <Link href="/" className="text-primary font-semibold hover:underline">
           Inicia sesión
         </Link>
       </p>
-
-      <div className="text-center mt-4">
-        <Link href="/" className="text-sm text-outline hover:text-primary transition-colors">
-          ← Volver al inicio
-        </Link>
-      </div>
     </div>
   );
 }

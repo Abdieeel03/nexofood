@@ -1,5 +1,5 @@
 import React from "react";
-import { Icon } from "../Icon";
+import { Icon } from "./Icon";
 
 export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "dark";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -92,3 +92,5 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+
+export { LogoutButton } from "./LogoutButton";

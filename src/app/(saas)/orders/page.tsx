@@ -91,6 +91,7 @@ export default function OrdersPage() {
       {viewMode === "kanban" ? (
         <KanbanBoard
           orders={filteredOrders}
+          allOrders={orders}
           onSelectOrder={setSelectedOrder}
           isLoading={isLoading}
           isError={isError}

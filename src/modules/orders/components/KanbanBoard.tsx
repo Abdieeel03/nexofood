@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useSyncExternalStore } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   DragDropContext,
   Droppable,
@@ -12,9 +13,11 @@ import {
   useReorderOrdersMutation,
   useCreateSaasOrderMutation,
 } from "../mutations/use-order-mutations";
+import { saasOrdersKeys } from "../queries/keys";
 
 interface KanbanBoardProps {
   orders: Order[];
+  allOrders?: Order[];
   onSelectOrder: (order: Order) => void;
   isLoading?: boolean;
   isError?: boolean;
@@ -61,12 +64,15 @@ const COLUMNS: {
 
 export function KanbanBoard({
   orders,
+  allOrders,
   onSelectOrder,
   isLoading = false,
   isError = false,
   error = null,
   onRetry,
 }: KanbanBoardProps) {
+  const queryClient = useQueryClient();
+
   // Mutaciones optimistas de TanStack Query
   const updateStatusMutation = useUpdateOrderStatusMutation();
   const reorderMutation = useReorderOrdersMutation();
@@ -79,7 +85,7 @@ export function KanbanBoard({
     () => false
   );
 
-  // Manejador Drag and Drop con mutación optimista
+  // Manejador Drag and Drop con mutación optimista respetando todos los canales
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
@@ -92,22 +98,71 @@ export function KanbanBoard({
       return;
     }
 
-    const newOrders = Array.from(orders);
-    const movedOrderIndex = newOrders.findIndex((o) => o.id === draggableId);
-    if (movedOrderIndex === -1) return;
-
-    const [movedOrder] = newOrders.splice(movedOrderIndex, 1);
     const targetStatus = destination.droppableId as OrderStatus;
 
-    // Actualizar estado de la orden al de la columna destino
+    // Obtener la lista completa de todas las comandas (todos los canales)
+    const fullCachedOrders =
+      allOrders ??
+      queryClient.getQueryData<Order[]>(saasOrdersKeys.lists()) ??
+      orders;
+
+    const movedOrder =
+      orders.find((o) => o.id === draggableId) ??
+      fullCachedOrders.find((o) => o.id === draggableId);
+    if (!movedOrder) return;
+
     const updatedOrder: Order = {
       ...movedOrder,
       status: targetStatus,
     };
 
-    // Reinsertar en la nueva lista y ejecutar mutación optimista
-    newOrders.splice(destination.index, 0, updatedOrder);
-    reorderMutation.mutate(newOrders);
+    // Reordenar la lista visible (filtrada por el canal actual)
+    const remainingFiltered = orders.filter((o) => o.id !== draggableId);
+    const destColumnOrders = remainingFiltered.filter(
+      (o) => o.status === targetStatus
+    );
+
+    let newFilteredOrders: Order[];
+    if (destination.index < destColumnOrders.length) {
+      const refOrder = destColumnOrders[destination.index];
+      const insertIndex = remainingFiltered.findIndex((o) => o.id === refOrder.id);
+      newFilteredOrders = [
+        ...remainingFiltered.slice(0, insertIndex),
+        updatedOrder,
+        ...remainingFiltered.slice(insertIndex),
+      ];
+    } else if (destColumnOrders.length > 0) {
+      const lastOrder = destColumnOrders[destColumnOrders.length - 1];
+      const insertIndex = remainingFiltered.findIndex((o) => o.id === lastOrder.id);
+      newFilteredOrders = [
+        ...remainingFiltered.slice(0, insertIndex + 1),
+        updatedOrder,
+        ...remainingFiltered.slice(insertIndex + 1),
+      ];
+    } else {
+      newFilteredOrders = [...remainingFiltered, updatedOrder];
+    }
+
+    // Combinar el nuevo orden filtrado con la lista global sin perder comandas de otros canales
+    const filteredIdSet = new Set(orders.map((o) => o.id));
+    if (filteredIdSet.size === fullCachedOrders.length) {
+      reorderMutation.mutate(newFilteredOrders);
+      return;
+    }
+
+    let filteredIdx = 0;
+    const finalOrders = fullCachedOrders.map((cachedOrder) => {
+      if (filteredIdSet.has(cachedOrder.id)) {
+        return newFilteredOrders[filteredIdx++];
+      }
+      return cachedOrder;
+    });
+
+    if (filteredIdx < newFilteredOrders.length) {
+      finalOrders.push(...newFilteredOrders.slice(filteredIdx));
+    }
+
+    reorderMutation.mutate(finalOrders);
   };
 
   // Manejador para avanzar comanda con un click usando mutación optimista

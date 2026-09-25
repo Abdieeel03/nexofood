@@ -25,5 +25,9 @@ export const menusKeys = {
 export const storeOrdersKeys = {
   all: ["store-orders"] as const,
   lists: () => [...storeOrdersKeys.all, "list"] as const,
-  detail: (id: string) => [...storeOrdersKeys.all, "detail", id] as const,
+  list: (customerId?: string) =>
+    [...storeOrdersKeys.lists(), customerId ?? "default"] as const,
+  details: () => [...storeOrdersKeys.all, "detail"] as const,
+  detail: (id: string, customerId?: string) =>
+    [...storeOrdersKeys.details(), customerId ?? "default", id] as const,
 };

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { useTransition } from "react";
+import { logoutAction } from "@/lib/auth-actions";
 
 interface SidebarProps {
   onCloseMobile?: () => void;
@@ -43,6 +44,13 @@ const navItems = [
 
 export function Sidebar({ onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+
+  const handleLogout = () => {
+    startTransition(async () => {
+      await logoutAction();
+    });
+  };
 
   return (
     <aside className="h-full flex flex-col justify-between w-64 bg-surface-card border-r border-outline-variant/50 select-none">
@@ -138,13 +146,14 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
           </div>
         </div>
 
-        <Link
-          href="/"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-outline hover:text-error hover:bg-error-container/20 transition-colors w-full"
+        <button
+          onClick={handleLogout}
+          disabled={isPending}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-outline hover:text-error hover:bg-error-container/20 transition-colors w-full cursor-pointer disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-base">logout</span>
-          <span>Salir al inicio</span>
-        </Link>
+          <span>{isPending ? "Cerrando sesión..." : "Cerrar sesión"}</span>
+        </button>
       </div>
     </aside>
   );

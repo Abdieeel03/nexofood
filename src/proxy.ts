@@ -10,9 +10,8 @@ const protectedRoutes = [
   "/employees",
   "/settings",
 ];
-const authRoutes = ["/login", "/register"];
+const authRoutes = ["/", "/login", "/register"];
 
-// Agregamos 'default' aquí 👇
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
@@ -27,11 +26,11 @@ export default function proxy(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
   const isAuthRoute = authRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
+    (route) => pathname === route || (route !== "/" && pathname.startsWith(`${route}/`))
   );
 
   if (isProtectedRoute && !isAuthenticated && !isDevMode) {
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = new URL("/", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -45,6 +44,7 @@ export default function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/dashboard/:path*",
     "/catalog/:path*",
     "/orders/:path*",

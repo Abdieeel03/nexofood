@@ -19,9 +19,21 @@ export async function loginAction(data: z.infer<typeof loginSchema>) {
       return { success: false, error: 'Credenciales inválidas' };
     }
 
+    if (!response.refreshToken) {
+      return { success: false, error: 'Respuesta de autenticación inválida' };
+    }
+
     await setAuthCookies({
       accessToken: token,
       refreshToken: response.refreshToken,
+    });
+
+    const cookieStore = await cookies();
+    cookieStore.set('nexofood_customer_scope', data.email.trim().toLowerCase(), {
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return { success: true };
@@ -43,5 +55,6 @@ export async function logoutAction() {
   await removeAuthCookies();
   const cookieStore = await cookies();
   cookieStore.delete('session_token');
+  cookieStore.delete('nexofood_customer_scope');
   redirect('/');
 }

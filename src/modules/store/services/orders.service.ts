@@ -3,10 +3,29 @@ import type { CheckoutInput, StoreOrder } from "../schemas/store.chema";
 import { roundMoney } from "../utils/format-price";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const CUSTOMER_SCOPE_COOKIE_NAME = "nexofood_customer_scope";
+
+function getCustomerScopeFromCookie(): string | null {
+  if (typeof window === "undefined") return null;
+  const scopeCookie = document.cookie
+    .split("; ")
+    .find((entry) => entry.startsWith(`${CUSTOMER_SCOPE_COOKIE_NAME}=`))
+    ?.split("=")[1];
+
+  if (!scopeCookie) return null;
+  try {
+    return decodeURIComponent(scopeCookie);
+  } catch {
+    return scopeCookie;
+  }
+}
 
 export function getCurrentCustomerScope(): string {
   if (typeof window === "undefined") return "default_customer";
   try {
+    const cookieScope = getCustomerScopeFromCookie();
+    if (cookieScope) return cookieScope;
+
     const storedId = localStorage.getItem("nexofood_customer_id");
     if (storedId) return storedId;
 
@@ -30,10 +49,11 @@ export function getCustomerOrdersStorageKey(customerId?: string): string {
 function readServerOrders(customerId?: string): StoreOrder[] {
   if (typeof window === "undefined") return [];
   try {
-    const key = getCustomerOrdersStorageKey(customerId);
+    const scope = customerId || getCurrentCustomerScope();
+    const key = getCustomerOrdersStorageKey(scope);
     const current = localStorage.getItem(key);
     if (!current) {
-      const legacy = localStorage.getItem("nexofood-server-orders");
+      const legacy = scope === "default_customer" ? localStorage.getItem("nexofood-server-orders") : null;
       if (legacy) {
         try {
           const parsed = JSON.parse(legacy);

@@ -1,7 +1,9 @@
 import type { Restaurant } from "../schemas/store.chema";
+import { filterRestaurants } from "../utils/filter-restaurants";
+import type { RestaurantQueryParams } from "../queries/keys";
 
-// TODO: reemplazar por la llamada real al API. La firma async ya es la definitiva.
-const RESTAURANTS: Restaurant[] = [
+// TODO: reemplazar por la llamada real al API backend cuando esté desplegado.
+export const RESTAURANTS: Restaurant[] = [
   {
     id: "r-1", name: "Bembos", category: "Hamburguesas", rating: 4.8,
     deliveryTime: "20 - 35 min", minutes: 35, deliveryFee: 0,
@@ -40,13 +42,22 @@ const RESTAURANTS: Restaurant[] = [
   },
 ];
 
-export async function getRestaurants(): Promise<Restaurant[]> {
-  return RESTAURANTS;
-}
-
-// Versión síncrona mientras todo sea mock (la home es un Client Component)
 export const MOCK_RESTAURANTS = RESTAURANTS;
 
+export async function getRestaurants(params?: RestaurantQueryParams): Promise<Restaurant[]> {
+  // Simulación de respuesta de red asíncrona
+  await new Promise((resolve) => setTimeout(resolve, 350));
+  if (!params) return RESTAURANTS;
+
+  return filterRestaurants(RESTAURANTS, {
+    category: params.category ?? "all",
+    search: params.search ?? "",
+    filters: params.filters ?? { promos: false, topRated: false, fast: false },
+    sort: params.sort ?? "relevance",
+  });
+}
+
 export async function getRestaurantById(id: string): Promise<Restaurant | undefined> {
+  await new Promise((resolve) => setTimeout(resolve, 250));
   return RESTAURANTS.find((res) => res.id === id);
 }

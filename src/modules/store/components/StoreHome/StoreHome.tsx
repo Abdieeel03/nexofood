@@ -2,9 +2,8 @@
 
 import React, { useMemo, useState } from "react";
 import { useStoreUi } from "@/stores/store-ui.store";
-import { MOCK_RESTAURANTS } from "../../services/restaurants.service";
-import { filterRestaurants } from "../../utils/filter-restaurants";
 import type { RestaurantFilters, SortOption } from "../../schemas/store.chema";
+import { useRestaurantsQuery } from "../../queries/use-restaurants-query";
 import { HeroBanner } from "../HeroBanner";
 import { Categories } from "../Categories";
 import { FilterBar } from "../FilterBar";
@@ -20,13 +19,23 @@ export const StoreHome: React.FC = () => {
   const toggleFilter = (key: keyof RestaurantFilters) =>
     setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const restaurants = useMemo(
-    () => filterRestaurants(MOCK_RESTAURANTS, { category: activeCategory, search: searchQuery, filters, sort }),
-    [activeCategory, filters, sort, searchQuery]
-  );
+  // Capa de estado del servidor con TanStack Query
+  const {
+    data: restaurants = [],
+    isLoading,
+    isError,
+    error,
+    isFetching,
+    refetch,
+  } = useRestaurantsQuery({
+    category: activeCategory,
+    search: searchQuery,
+    filters,
+    sort,
+  });
 
-  const featured = useMemo(() => MOCK_RESTAURANTS.filter((r) => r.featured), []);
-  const showFeatured = activeCategory === "all" && searchQuery.trim() === "";
+  const featured = useMemo(() => restaurants.filter((r) => r.featured), [restaurants]);
+  const showFeatured = activeCategory === "all" && searchQuery.trim() === "" && !isLoading && !isError;
 
   return (
     <div className="w-full max-w-[1650px] mx-auto px-4 md:px-8 py-6 flex flex-col gap-6 font-sans">
@@ -36,7 +45,14 @@ export const StoreHome: React.FC = () => {
 
       {showFeatured && <TopRestaurants restaurants={featured} />}
 
-      <RestaurantGrid restaurants={restaurants} />
+      <RestaurantGrid
+        restaurants={restaurants}
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
+        isFetching={isFetching}
+        onRetry={() => refetch()}
+      />
     </div>
   );
 };

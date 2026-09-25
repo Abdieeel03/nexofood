@@ -4,13 +4,62 @@ import { roundMoney } from "../utils/format-price";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const SERVER_ORDERS_KEY = "nexofood-server-orders";
+
+function readServerOrders(): StoreOrder[] {
+  if (typeof window === "undefined") return [];
+  try {
+    // Si no existen órdenes en el servidor simulado, intentar migrar desde el viejo store de zustand
+    const current = localStorage.getItem(SERVER_ORDERS_KEY);
+    if (!current) {
+      const oldZustand = localStorage.getItem("nexofood-orders");
+      if (oldZustand) {
+        const parsed = JSON.parse(oldZustand);
+        if (parsed?.state?.orders?.length > 0) {
+          localStorage.setItem(SERVER_ORDERS_KEY, JSON.stringify(parsed.state.orders));
+          return parsed.state.orders;
+        }
+      }
+      return [];
+    }
+    return JSON.parse(current);
+  } catch {
+    return [];
+  }
+}
+
+function writeServerOrders(orders: StoreOrder[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(SERVER_ORDERS_KEY, JSON.stringify(orders));
+  } catch {
+    // ignore
+  }
+}
+
 /**
- * Crea el pedido (mock). La firma ya es la definitiva.
+ * Obtiene los pedidos del cliente desde el servidor (simulado).
+ */
+export async function getStoreOrders(): Promise<StoreOrder[]> {
+  await wait(450); // simulación de latencia de red
+  return readServerOrders();
+}
+
+/**
+ * Obtiene un pedido por ID.
+ */
+export async function getStoreOrderById(id: string): Promise<StoreOrder | undefined> {
+  await wait(250);
+  const orders = readServerOrders();
+  return orders.find((o) => o.id === id);
+}
+
+/**
+ * Crea el pedido en el servidor.
  * TODO: reemplazar por POST /api/orders (orderCreateSchema) y mapear la respuesta a StoreOrder.
- * Cuando exista la pasarela, el pedido se crea solo con el pago APPROVED.
  */
 export async function createOrder(input: CheckoutInput): Promise<StoreOrder> {
-  await wait(1600); // simula la aprobación del pago
+  await wait(1400); // simula la aprobación del pago y registro en el backend
 
   const items = input.items.map((item) => ({
     id: crypto.randomUUID(),
@@ -24,7 +73,7 @@ export async function createOrder(input: CheckoutInput): Promise<StoreOrder> {
   const subtotal = roundMoney(items.reduce((acc, i) => acc + i.totalPrice, 0));
   const deliveryFee = input.store.deliveryFee;
 
-  return {
+  const newOrder: StoreOrder = {
     id: crypto.randomUUID(),
     orderNumber: `NX-${Date.now().toString().slice(-6)}`,
     status: "CONFIRMED", // el pago ya fue aprobado
@@ -38,6 +87,11 @@ export async function createOrder(input: CheckoutInput): Promise<StoreOrder> {
     paymentMethod: input.paymentMethod,
     deliveryAddress: input.deliveryAddress,
   };
+
+  const current = readServerOrders();
+  writeServerOrders([newOrder, ...current]);
+
+  return newOrder;
 }
 
 // ---------------------------------------------------------------------------

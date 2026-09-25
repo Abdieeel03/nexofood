@@ -4,20 +4,45 @@ import { roundMoney } from "../utils/format-price";
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const SERVER_ORDERS_KEY = "nexofood-server-orders";
+export function getCurrentCustomerScope(): string {
+  if (typeof window === "undefined") return "default_customer";
+  try {
+    const storedId = localStorage.getItem("nexofood_customer_id");
+    if (storedId) return storedId;
 
-function readServerOrders(): StoreOrder[] {
+    const storedUser = localStorage.getItem("nexofood_user");
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      if (parsed?.id) return String(parsed.id);
+      if (parsed?.email) return String(parsed.email);
+    }
+  } catch {
+    // ignore
+  }
+  return "default_customer";
+}
+
+export function getCustomerOrdersStorageKey(customerId?: string): string {
+  const scope = customerId || getCurrentCustomerScope();
+  return `nexofood-server-orders:${scope}`;
+}
+
+function readServerOrders(customerId?: string): StoreOrder[] {
   if (typeof window === "undefined") return [];
   try {
-    // Si no existen órdenes en el servidor simulado, intentar migrar desde el viejo store de zustand
-    const current = localStorage.getItem(SERVER_ORDERS_KEY);
+    const key = getCustomerOrdersStorageKey(customerId);
+    const current = localStorage.getItem(key);
     if (!current) {
-      const oldZustand = localStorage.getItem("nexofood-orders");
-      if (oldZustand) {
-        const parsed = JSON.parse(oldZustand);
-        if (parsed?.state?.orders?.length > 0) {
-          localStorage.setItem(SERVER_ORDERS_KEY, JSON.stringify(parsed.state.orders));
-          return parsed.state.orders;
+      const legacy = localStorage.getItem("nexofood-server-orders");
+      if (legacy) {
+        try {
+          const parsed = JSON.parse(legacy);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            localStorage.setItem(key, legacy);
+            return parsed;
+          }
+        } catch {
+          // ignore
         }
       }
       return [];
@@ -28,38 +53,41 @@ function readServerOrders(): StoreOrder[] {
   }
 }
 
-function writeServerOrders(orders: StoreOrder[]): void {
+function writeServerOrders(orders: StoreOrder[], customerId?: string): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(SERVER_ORDERS_KEY, JSON.stringify(orders));
+    const key = getCustomerOrdersStorageKey(customerId);
+    localStorage.setItem(key, JSON.stringify(orders));
   } catch {
     // ignore
   }
 }
 
 /**
- * Obtiene los pedidos del cliente desde el servidor (simulado).
+ * Obtiene los pedidos del cliente desde el servidor (con ámbito por usuario/cliente).
  */
-export async function getStoreOrders(): Promise<StoreOrder[]> {
+export async function getStoreOrders(customerId?: string): Promise<StoreOrder[]> {
   await wait(450); // simulación de latencia de red
-  return readServerOrders();
+  return readServerOrders(customerId);
 }
 
 /**
- * Obtiene un pedido por ID.
+ * Obtiene un pedido por ID con ámbito por usuario/cliente.
  */
-export async function getStoreOrderById(id: string): Promise<StoreOrder | undefined> {
+export async function getStoreOrderById(id: string, customerId?: string): Promise<StoreOrder | undefined> {
   await wait(250);
-  const orders = readServerOrders();
+  const orders = readServerOrders(customerId);
   return orders.find((o) => o.id === id);
 }
 
 /**
- * Crea el pedido en el servidor.
+ * Crea el pedido en el servidor asociado a la identidad del cliente.
  * TODO: reemplazar por POST /api/orders (orderCreateSchema) y mapear la respuesta a StoreOrder.
  */
-export async function createOrder(input: CheckoutInput): Promise<StoreOrder> {
+export async function createOrder(input: CheckoutInput, customerId?: string): Promise<StoreOrder> {
   await wait(1400); // simula la aprobación del pago y registro en el backend
+
+  const scope = customerId || getCurrentCustomerScope();
 
   const items = input.items.map((item) => ({
     id: crypto.randomUUID(),
@@ -88,8 +116,8 @@ export async function createOrder(input: CheckoutInput): Promise<StoreOrder> {
     deliveryAddress: input.deliveryAddress,
   };
 
-  const current = readServerOrders();
-  writeServerOrders([newOrder, ...current]);
+  const current = readServerOrders(scope);
+  writeServerOrders([newOrder, ...current], scope);
 
   return newOrder;
 }

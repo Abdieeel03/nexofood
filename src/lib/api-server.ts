@@ -1,13 +1,8 @@
-import { apiClient, RequestOptions } from "./api-client";
+import { z } from "zod";
+import { AxiosError } from "axios";
+import { axiosServer, applyServerTokenInterceptor } from "./axios";
 import { getAccessToken } from "./auth-cookies";
-
-/**
- * URL de la API interna para llamadas de servidor a servidor
- */
-const SERVER_API_BASE_URL =
-  process.env.API_INTERNAL_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8080/api";
+import { ApiError, type RequestOptions } from "./api-client";
 
 /**
  * Cliente de API para uso exclusivo en el Servidor de Next.js
@@ -21,26 +16,48 @@ async function executeServerRequest<T>(
   body?: unknown,
   options: RequestOptions = {}
 ): Promise<T> {
-  const token = await getAccessToken();
+  const { schema, token: explicitToken, headers: customHeaders, params, signal } = options;
+  const token = explicitToken || (await getAccessToken());
+  const authHeaders = applyServerTokenInterceptor(token);
 
-  // Si el endpoint no es absoluto, adaptamos con la URL base de servidor
-  const resolvedEndpoint = endpoint.startsWith("http")
-    ? endpoint
-    : `${SERVER_API_BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
+  const cleanParams = params
+    ? Object.fromEntries(
+        Object.entries(params).filter(([, value]) => value !== undefined)
+      )
+    : undefined;
 
-  switch (method) {
-    case "GET":
-      return apiClient.get<T>(resolvedEndpoint, { ...options, token: token || options.token });
-    case "POST":
-      return apiClient.post<T>(resolvedEndpoint, body, { ...options, token: token || options.token });
-    case "PUT":
-      return apiClient.put<T>(resolvedEndpoint, body, { ...options, token: token || options.token });
-    case "PATCH":
-      return apiClient.patch<T>(resolvedEndpoint, body, { ...options, token: token || options.token });
-    case "DELETE":
-      return apiClient.delete<T>(resolvedEndpoint, { ...options, token: token || options.token });
-    default:
-      throw new Error(`Método HTTP no soportado: ${method}`);
+  const combinedHeaders = {
+    ...authHeaders,
+    ...(customHeaders || {}),
+  };
+
+  try {
+    const response = await axiosServer<T>({
+      url: endpoint,
+      method,
+      data: body,
+      params: cleanParams,
+      headers: Object.keys(combinedHeaders).length > 0 ? combinedHeaders : undefined,
+      signal,
+    });
+
+    const rawData = response.data;
+
+    if (schema) {
+      const parseResult = schema.safeParse(rawData);
+      if (!parseResult.success) {
+        console.error("[ApiServer] Error de validación Zod en servidor:", parseResult.error);
+        throw new Error(`Error de validación del esquema: ${parseResult.error.message}`);
+      }
+      return parseResult.data as T;
+    }
+
+    return rawData;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      throw ApiError.fromAxiosError(error);
+    }
+    throw error;
   }
 }
 

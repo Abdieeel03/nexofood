@@ -3,6 +3,7 @@ import {
   defaultShouldDehydrateQuery,
   isServer,
 } from "@tanstack/react-query";
+import { ApiError } from "./api-client";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -14,7 +15,10 @@ function makeQueryClient() {
         gcTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: (failureCount, error) => {
-          // No reintentar en errores 4xx del cliente
+          // No reintentar en errores 4xx del cliente (el 401 ya es atendido por el interceptor de Axios)
+          if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+            return false;
+          }
           if (error && typeof error === "object" && "status" in error) {
             const status = (error as { status: number }).status;
             if (status >= 400 && status < 500) return false;

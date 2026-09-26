@@ -19,11 +19,12 @@ export function useRestaurantsQuery(params: RestaurantQueryParams = {}) {
 /**
  * Consulta del detalle de un restaurante por ID.
  */
-export function useRestaurantDetailQuery(id: string) {
+export function useRestaurantDetailQuery(id: string, initialData?: Restaurant) {
   return useQuery<Restaurant | undefined, Error>({
     queryKey: restaurantsKeys.detail(id),
     queryFn: () => getRestaurantById(id),
     enabled: Boolean(id),
     staleTime: 5 * 60 * 1000,
+    initialData,
   });
 }

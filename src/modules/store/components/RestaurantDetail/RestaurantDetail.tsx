@@ -21,10 +21,10 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({
 }) => {
   // Conexión con TanStack Query hidratado con initialData del servidor
   const { data: restaurant = initialRestaurant, isFetching: isFetchingRestaurant } =
-    useRestaurantDetailQuery(initialRestaurant.id);
+    useRestaurantDetailQuery(initialRestaurant.id, initialRestaurant);
 
   const { data: menu = initialMenu, isFetching: isFetchingMenu } =
-    useMenuQuery(restaurant);
+    useMenuQuery(restaurant, initialMenu);
 
   const isFetching = isFetchingRestaurant || isFetchingMenu;
 

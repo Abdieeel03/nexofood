@@ -26,7 +26,7 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-screen flex bg-surface-base antialiased text-on-surface">
       <a
         href="#saas-main-content"
-        className="visually-hidden focus-visible:fixed focus-visible:top-3 focus-visible:left-3 focus-visible:z-50 focus-visible:rounded-xl focus-visible:bg-primary focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-bold focus-visible:text-on-primary focus-visible:shadow-level-2"
+        className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-3 focus-visible:left-3 focus-visible:z-50 focus-visible:rounded-xl focus-visible:bg-primary focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-bold focus-visible:text-on-primary focus-visible:shadow-level-2"
       >
         Ir al contenido principal
       </a>

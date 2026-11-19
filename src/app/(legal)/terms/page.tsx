@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LegalDocument, type LegalSection } from "@/components/legal/LegalDocument";
 
 export const metadata: Metadata = {
-  title: "Términos del Servicio | NexoFood",
+  title: "Términos del Servicio",
   description: "Condiciones de uso de la plataforma NexoFood para restaurantes y comensales.",
 };
 

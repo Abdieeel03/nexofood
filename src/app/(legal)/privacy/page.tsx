@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LegalDocument, type LegalSection } from "@/components/legal/LegalDocument";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad | NexoFood",
+  title: "Política de Privacidad",
   description: "Cómo NexoFood recopila, usa y protege tus datos personales.",
 };
 

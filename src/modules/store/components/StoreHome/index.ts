@@ -1,1 +1,0 @@
-export { StoreHome } from "./StoreHome";

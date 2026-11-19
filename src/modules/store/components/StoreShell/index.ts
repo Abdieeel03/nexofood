@@ -1,1 +1,1 @@
-export { StoreShell } from "./StoreShell";
+export * from "./StoreShell";

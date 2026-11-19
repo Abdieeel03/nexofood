@@ -1,57 +1,57 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME } from "./lib/auth-cookies";
+import {
+  AUTH_COOKIE_NAME,
+  REFRESH_COOKIE_NAME,
+  isAuthPath,
+  isProtectedPath,
+} from "./lib/auth-constants";
 
-const protectedRoutes = [
-  "/dashboard",
-  "/catalog",
-  "/orders",
-  "/inventory",
-  "/employees",
-  "/settings",
-];
-const authRoutes = ["/", "/login", "/register"];
+export function proxy(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+  const accessToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
 
-export default function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  const isAuthenticated = Boolean(token);
+  const isProtectedRoute = isProtectedPath(pathname);
+  const isAuthRoute = isAuthPath(pathname);
 
-  // Modo Dev: si estamos en desarrollo o NEXT_PUBLIC_DEV_MODE=true, permitimos navegar sin login
-  const isDevMode =
-    process.env.NODE_ENV !== "production" ||
-    process.env.NEXT_PUBLIC_DEV_MODE === "true";
+  if (isProtectedRoute) {
+    if (!accessToken && !refreshToken) {
+      const loginUrl = new URL("/", request.url);
+      loginUrl.searchParams.set("callbackUrl", `${pathname}${search}`);
+      return NextResponse.redirect(loginUrl);
+    }
 
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
-  const isAuthRoute = authRoutes.some(
-    (route) => pathname === route || (route !== "/" && pathname.startsWith(`${route}/`))
-  );
-
-  if (isProtectedRoute && !isAuthenticated && !isDevMode) {
-    const loginUrl = new URL("/", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
+    if (!accessToken && refreshToken) {
+      const refreshUrl = new URL("/api/auth/refresh", request.url);
+      refreshUrl.searchParams.set("next", `${pathname}${search}`);
+      return NextResponse.redirect(refreshUrl);
+    }
   }
 
-  if (isAuthRoute && isAuthenticated) {
+  if (isAuthRoute && accessToken) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 }
 
+export default proxy;
+
 export const config = {
   matcher: [
     "/",
+    "/login",
+    "/register",
     "/dashboard/:path*",
     "/catalog/:path*",
     "/orders/:path*",
-    "/inventory/:path*",
+    "/tracking/:path*",
     "/employees/:path*",
+    "/customers/:path*",
+    "/onboarding/:path*",
+    "/account/:path*",
+    "/admin/:path*",
     "/settings/:path*",
-    "/login",
-    "/register",
   ],
 };

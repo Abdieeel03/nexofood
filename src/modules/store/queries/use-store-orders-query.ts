@@ -1,38 +1,45 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { storeOrdersKeys } from "./keys";
-import {
-  getStoreOrders,
-  getStoreOrderById,
-  getCurrentCustomerScope,
-} from "../services/orders.service";
-import type { StoreOrder } from "../schemas/store.chema";
+import { pageResponseSchema, type PageResponse } from "@/schemas/common.schema";
+import { orderResponseSchema, type OrderResponse } from "@/schemas/order.schema";
+import { apiClient } from "@/lib/api-client";
+import { storeKeys } from "./keys";
 
-/**
- * Consulta de la lista de pedidos del usuario en la tienda.
- * Mantiene los datos en caché con revalidaciones automáticas según se requiera y aislados por usuario.
- */
-export function useStoreOrdersQuery(customerId?: string) {
-  const customerScope = customerId || getCurrentCustomerScope();
-
-  return useQuery<StoreOrder[], Error>({
-    queryKey: storeOrdersKeys.list(customerScope),
-    queryFn: () => getStoreOrders(customerScope),
-    staleTime: 10 * 1000, // 10 segundos para pedidos (estado vivo)
+export function useStoreOrdersQuery(
+  slug: string,
+  page = 0,
+  size = 10,
+  enabled = true
+) {
+  return useQuery<PageResponse<OrderResponse>>({
+    queryKey: storeKeys.orders(slug, page, size),
+    enabled: Boolean(slug && enabled),
+    queryFn: () =>
+      apiClient.get<PageResponse<OrderResponse>>(
+        `/store/${encodeURIComponent(slug)}/orders`,
+        {
+          params: { page, size },
+          schema: pageResponseSchema(orderResponseSchema),
+        }
+      ),
+    staleTime: 15 * 1000,
   });
 }
 
-/**
- * Consulta de un pedido específico por ID.
- */
-export function useStoreOrderDetailQuery(id: string, customerId?: string) {
-  const customerScope = customerId || getCurrentCustomerScope();
-
-  return useQuery<StoreOrder | undefined, Error>({
-    queryKey: storeOrdersKeys.detail(id, customerScope),
-    queryFn: () => getStoreOrderById(id, customerScope),
-    enabled: Boolean(id),
-    staleTime: 10 * 1000,
+export function useStoreOrderDetailQuery(
+  slug: string,
+  orderId: string | null,
+  enabled = true
+) {
+  return useQuery<OrderResponse>({
+    queryKey: storeKeys.orderDetail(slug, orderId ?? ""),
+    enabled: Boolean(slug && orderId && enabled),
+    queryFn: () =>
+      apiClient.get<OrderResponse>(
+        `/store/${encodeURIComponent(slug)}/orders/${encodeURIComponent(orderId!)}`,
+        { schema: orderResponseSchema }
+      ),
+    staleTime: 15 * 1000,
   });
 }

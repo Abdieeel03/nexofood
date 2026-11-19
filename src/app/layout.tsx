@@ -16,19 +16,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Nexofood — Potencia tu negocio gastronómico",
+  title: {
+    default: "NexoFood — Plataforma SaaS Gastronómica y Storefront",
+    template: "%s | NexoFood",
+  },
   description:
-    "La plataforma #1 para restaurantes. Crea tu tienda online, gestiona pedidos de todas las plataformas y fideliza a tus clientes sin comisiones abusivas.",
+    "Plataforma SaaS multi-tenant para restaurantes: gestión de catálogo y precios, pedidos, pantalla de cocina (KDS), reparto con rastreo GPS en vivo y storefront con Mercado Pago.",
   keywords: [
-    "Nexofood",
-    "restaurante",
+    "NexoFood",
+    "SaaS restaurantes",
     "pedidos online",
-    "delivery",
-    "gastronomía",
-    "software gastronómico",
-    "POS gastronómico",
+    "KDS cocina",
+    "rastreo GPS delivery",
+    "Mercado Pago",
+    "storefront gastronómico",
   ],
-  authors: [{ name: "Nexofood" }],
+  authors: [{ name: "NexoFood" }],
 };
 
 export default function RootLayout({
@@ -37,7 +40,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={plusJakartaSans.variable} data-scroll-behavior="smooth">
+    <html
+      lang="es"
+      className={plusJakartaSans.variable}
+      data-scroll-behavior="smooth"
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

@@ -167,6 +167,13 @@ export const wgs84LngSchema = z
   .min(-180, "La longitud debe estar entre -180.0 y 180.0 grados")
   .max(180, "La longitud debe estar entre -180.0 y 180.0 grados");
 
+export const UUID_REGEX =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+export function uuidSchema(message = "Invalid UUID") {
+  return z.string().regex(UUID_REGEX, message);
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return false;

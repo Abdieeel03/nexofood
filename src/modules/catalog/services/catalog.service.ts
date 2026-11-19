@@ -3,6 +3,7 @@ import { apiClient } from "@/lib/api-client";
 import {
   cleanPayload,
   pageResponseSchema,
+  uuidSchema,
   type ApiResponse,
   type PageResponse,
 } from "@/schemas/common.schema";
@@ -49,7 +50,7 @@ const productPriceListSchema = z.array(productPriceResponseSchema);
 const productPatchResponseSchema = productResponseSchema
   .partial()
   .extend({
-    id: z.uuid(),
+    id: uuidSchema(),
     name: z.string(),
     stock: z.number().int(),
     isAvailable: z.boolean(),

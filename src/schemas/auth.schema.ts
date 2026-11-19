@@ -3,6 +3,7 @@ import {
   passwordPolicySchema,
   tenantStaffRoleEnum,
   userSystemRoleEnum,
+  uuidSchema,
   wgs84LatSchema,
   wgs84LngSchema,
 } from "./common.schema";
@@ -10,7 +11,7 @@ import {
 // ─── Response DTOs (1. Identity) ─────────────────────────────────────────────
 
 export const userResponseSchema = z.object({
-  id: z.uuid(),
+  id: uuidSchema(),
   email: z.email(),
   fullName: z.string(),
   phone: z.string().nullable().optional(),
@@ -22,7 +23,7 @@ export const userResponseSchema = z.object({
 export type UserResponse = z.infer<typeof userResponseSchema>;
 
 export const tenantStaffMembershipDtoSchema = z.object({
-  tenantId: z.uuid(),
+  tenantId: uuidSchema(),
   tenantName: z.string(),
   tenantSlug: z.string(),
   staffRole: tenantStaffRoleEnum,
@@ -30,8 +31,8 @@ export const tenantStaffMembershipDtoSchema = z.object({
 export type TenantStaffMembershipDto = z.infer<typeof tenantStaffMembershipDtoSchema>;
 
 export const customerAddressResponseSchema = z.object({
-  id: z.uuid(),
-  userId: z.uuid(),
+  id: uuidSchema(),
+  userId: uuidSchema(),
   title: z.string().nullable().optional(),
   addressLine: z.string(),
   reference: z.string().nullable().optional(),
@@ -43,7 +44,7 @@ export const customerAddressResponseSchema = z.object({
 export type CustomerAddressResponse = z.infer<typeof customerAddressResponseSchema>;
 
 export const userProfileResponseSchema = z.object({
-  id: z.uuid(),
+  id: uuidSchema(),
   email: z.email(),
   fullName: z.string(),
   phone: z.string().nullable().optional(),

@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { paymentStatusEnum } from "./common.schema";
+import { paymentStatusEnum, uuidSchema } from "./common.schema";
 
 // ─── Response DTOs (7. Payment) ──────────────────────────────────────────────
 
 export const checkoutPaymentResponseSchema = z.object({
-  paymentId: z.uuid(),
+  paymentId: uuidSchema(),
   mpOrderId: z.string(),
   checkoutUrl: z.string(),
   status: paymentStatusEnum,
@@ -25,7 +25,7 @@ export type MercadoPagoConnectResponse = z.infer<
 >;
 
 export const mercadoPagoStatusResponseSchema = z.object({
-  tenantId: z.uuid(),
+  tenantId: uuidSchema(),
   connected: z.boolean(),
   mpUserId: z.string().nullable(),
   connectedAt: z.string().nullable(),
@@ -36,10 +36,10 @@ export type MercadoPagoStatusResponse = z.infer<
 >;
 
 export const paymentStatusResponseSchema = z.object({
-  paymentId: z.uuid(),
+  paymentId: uuidSchema(),
   status: paymentStatusEnum,
   statusDetail: z.string().nullable(),
-  orderId: z.uuid().nullable(),
+  orderId: uuidSchema().nullable(),
   orderNumber: z.string().nullable(),
   amount: z.number(),
   currency: z.string(),
@@ -49,11 +49,11 @@ export const paymentStatusResponseSchema = z.object({
 export type PaymentStatusResponse = z.infer<typeof paymentStatusResponseSchema>;
 
 export const paymentResponseSchema = z.object({
-  id: z.uuid(),
-  orderId: z.uuid().nullable(),
+  id: uuidSchema(),
+  orderId: uuidSchema().nullable(),
   orderNumber: z.string().nullable(),
-  tenantId: z.uuid(),
-  customerId: z.uuid().nullable(),
+  tenantId: uuidSchema(),
+  customerId: uuidSchema().nullable(),
   mpOrderId: z.string().nullable(),
   mpPaymentId: z.string().nullable(),
   paymentMethod: z.string().nullable(),

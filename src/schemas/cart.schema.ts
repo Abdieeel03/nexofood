@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { uuidSchema } from "./common.schema";
 
 // ─── Request DTOs (5. Cart) ──────────────────────────────────────────────────
 
 export const cartItemRequestSchema = z.object({
-  productId: z.uuid("ID de producto inválido"),
+  productId: uuidSchema("ID de producto inválido"),
   quantity: z
     .number({ error: "La cantidad debe ser un número entero" })
     .int("La cantidad debe ser un número entero")
@@ -48,8 +49,8 @@ export type CartNotesRequest = z.infer<typeof cartNotesRequestSchema>;
 // ─── Response DTOs (5. Cart) ─────────────────────────────────────────────────
 
 export const cartItemResponseSchema = z.object({
-  id: z.uuid(),
-  productId: z.uuid(),
+  id: uuidSchema(),
+  productId: uuidSchema(),
   productName: z.string(),
   productImageUrl: z.string().nullable(),
   unitPrice: z.number(),
@@ -66,12 +67,12 @@ export const cartItemResponseSchema = z.object({
 export type CartItemResponse = z.infer<typeof cartItemResponseSchema>;
 
 export const cartResponseSchema = z.object({
-  id: z.uuid(),
-  tenantId: z.uuid(),
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
   tenantSlug: z.string().nullable(),
   tenantName: z.string().nullable(),
-  customerId: z.uuid(),
-  customerUserId: z.uuid(),
+  customerId: uuidSchema(),
+  customerUserId: uuidSchema(),
   total: z.number(),
   notes: z.string().nullable(),
   items: z.array(cartItemResponseSchema),

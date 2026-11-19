@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   subscriptionPaymentStatusEnum,
   subscriptionStatusEnum,
+  uuidSchema,
 } from "./common.schema";
 
 // ─── Request DTOs (2. Subscription) ──────────────────────────────────────────
@@ -40,7 +41,7 @@ export type SubscriptionPlanStatusRequest = z.infer<
 >;
 
 export const subscriptionCreateRequestSchema = z.object({
-  planId: z.uuid("ID de plan inválido"),
+  planId: uuidSchema("ID de plan inválido"),
 });
 export type SubscriptionCreateRequest = z.infer<
   typeof subscriptionCreateRequestSchema
@@ -49,7 +50,7 @@ export type SubscriptionCreateRequest = z.infer<
 // ─── Response DTOs (2. Subscription) ─────────────────────────────────────────
 
 export const subscriptionPlanResponseSchema = z.object({
-  id: z.uuid(),
+  id: uuidSchema(),
   name: z.string(),
   price: z.number(),
   billingCycleDays: z.number().int(),
@@ -63,12 +64,12 @@ export type SubscriptionPlanResponse = z.infer<
 >;
 
 export const subscriptionResponseSchema = z.object({
-  id: z.uuid(),
+  id: uuidSchema(),
   plan: subscriptionPlanResponseSchema,
-  userId: z.uuid(),
+  userId: uuidSchema(),
   status: subscriptionStatusEnum,
-  startDate: z.string(),
-  endDate: z.string(),
+  startDate: z.string().nullable(),
+  endDate: z.string().nullable(),
   mpPreapprovalId: z.string().nullable(),
   mpPreapprovalStatus: z.string().nullable(),
   cancelAtPeriodEnd: z.boolean(),
@@ -78,8 +79,8 @@ export const subscriptionResponseSchema = z.object({
 export type SubscriptionResponse = z.infer<typeof subscriptionResponseSchema>;
 
 export const subscriptionCheckoutResponseSchema = z.object({
-  subscriptionId: z.uuid(),
-  planId: z.uuid(),
+  subscriptionId: uuidSchema(),
+  planId: uuidSchema(),
   mpPreapprovalId: z.string(),
   initPoint: z.string(),
   status: subscriptionStatusEnum,
@@ -89,8 +90,8 @@ export type SubscriptionCheckoutResponse = z.infer<
 >;
 
 export const subscriptionPaymentResponseSchema = z.object({
-  id: z.uuid(),
-  subscriptionId: z.uuid(),
+  id: uuidSchema(),
+  subscriptionId: uuidSchema(),
   mpAuthorizedPaymentId: z.string().nullable(),
   mpPaymentId: z.string().nullable(),
   status: subscriptionPaymentStatusEnum,

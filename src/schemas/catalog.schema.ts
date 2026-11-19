@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uuidSchema } from "./common.schema";
 
 // ─── Request DTOs (4. Catalog) ───────────────────────────────────────────────
 
@@ -60,7 +61,7 @@ export type CategorySortOrderRequest = z.infer<
 
 export const productPriceRequestSchema = z
   .object({
-    id: z.uuid().optional(),
+    id: uuidSchema().optional(),
     name: z
       .string()
       .trim()
@@ -120,8 +121,8 @@ export const productPriceRequestSchema = z
 export type ProductPriceRequest = z.infer<typeof productPriceRequestSchema>;
 
 export const productRequestSchema = z.object({
-  categoryId: z.uuid("ID de categoría inválido").nullable().optional(),
-  taxId: z.uuid("ID de impuesto inválido").nullable().optional(),
+  categoryId: uuidSchema("ID de categoría inválido").nullable().optional(),
+  taxId: uuidSchema("ID de impuesto inválido").nullable().optional(),
   name: z
     .string()
     .trim()
@@ -170,8 +171,8 @@ export type ProductStockRequest = z.infer<typeof productStockRequestSchema>;
 // ─── Response DTOs (4. Catalog) ──────────────────────────────────────────────
 
 export const taxResponseSchema = z.object({
-  id: z.uuid(),
-  tenantId: z.uuid(),
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
   name: z.string(),
   rate: z.number(),
   code: z.string().nullable(),
@@ -183,8 +184,8 @@ export const taxResponseSchema = z.object({
 export type TaxResponse = z.infer<typeof taxResponseSchema>;
 
 export const categoryResponseSchema = z.object({
-  id: z.uuid(),
-  tenantId: z.uuid(),
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
   name: z.string(),
   description: z.string().nullable(),
   sortOrder: z.number().int(),
@@ -195,8 +196,8 @@ export const categoryResponseSchema = z.object({
 export type CategoryResponse = z.infer<typeof categoryResponseSchema>;
 
 export const productPriceResponseSchema = z.object({
-  id: z.uuid(),
-  productId: z.uuid(),
+  id: uuidSchema(),
+  productId: uuidSchema(),
   name: z.string(),
   price: z.number(),
   isBase: z.boolean(),
@@ -214,11 +215,11 @@ export const productPriceResponseSchema = z.object({
 export type ProductPriceResponse = z.infer<typeof productPriceResponseSchema>;
 
 export const productResponseSchema = z.object({
-  id: z.uuid(),
-  tenantId: z.uuid(),
-  categoryId: z.uuid().nullable(),
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
+  categoryId: uuidSchema().nullable(),
   categoryName: z.string().nullable(),
-  taxId: z.uuid().nullable(),
+  taxId: uuidSchema().nullable(),
   taxName: z.string().nullable(),
   taxRate: z.number().nullable(),
   taxInclusive: z.boolean().nullable(),
@@ -236,9 +237,9 @@ export const productResponseSchema = z.object({
 export type ProductResponse = z.infer<typeof productResponseSchema>;
 
 export const storefrontProductResponseSchema = z.object({
-  id: z.uuid(),
-  tenantId: z.uuid(),
-  categoryId: z.uuid().nullable(),
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
+  categoryId: uuidSchema().nullable(),
   categoryName: z.string().nullable(),
   name: z.string(),
   description: z.string().nullable(),
@@ -247,7 +248,7 @@ export const storefrontProductResponseSchema = z.object({
   basePrice: z.number(),
   activePromotionName: z.string().nullable(),
   discountPercentage: z.number().nullable(),
-  taxId: z.uuid().nullable(),
+  taxId: uuidSchema().nullable(),
   taxName: z.string().nullable(),
   taxRate: z.number(),
   taxInclusive: z.boolean().nullable(),
@@ -262,7 +263,7 @@ export type StorefrontProductResponse = z.infer<
 >;
 
 export const storefrontCategoryResponseSchema = z.object({
-  id: z.uuid(),
+  id: uuidSchema(),
   name: z.string(),
   description: z.string().nullable(),
   sortOrder: z.number().int(),
@@ -273,7 +274,7 @@ export type StorefrontCategoryResponse = z.infer<
 >;
 
 export const storefrontMenuResponseSchema = z.object({
-  tenantId: z.uuid(),
+  tenantId: uuidSchema(),
   tenantName: z.string(),
   tenantSlug: z.string(),
   logoUrl: z.string().nullable(),

@@ -3,6 +3,7 @@ import { userResponseSchema } from "./auth.schema";
 import {
   passwordPolicySchema,
   tenantStaffRoleEnum,
+  uuidSchema,
   wgs84LatSchema,
   wgs84LngSchema,
 } from "./common.schema";
@@ -11,7 +12,7 @@ import {
 
 export const tenantCreateRequestSchema = z
   .object({
-    subscriptionId: z.uuid("ID de suscripción inválido").optional(),
+    subscriptionId: uuidSchema("ID de suscripción inválido").optional(),
     name: z
       .string()
       .trim()
@@ -86,7 +87,7 @@ export const tenantStatusRequestSchema = z.object({
 export type TenantStatusRequest = z.infer<typeof tenantStatusRequestSchema>;
 
 export const tenantMemberRequestSchema = z.object({
-  userId: z.uuid("ID de usuario inválido"),
+  userId: uuidSchema("ID de usuario inválido"),
   role: tenantStaffRoleEnum,
 });
 export type TenantMemberRequest = z.infer<typeof tenantMemberRequestSchema>;
@@ -172,9 +173,9 @@ export type StoreLoginRequest = z.infer<typeof storeLoginRequestSchema>;
 // ─── Response DTOs (3. Tenant / Store) ───────────────────────────────────────
 
 export const tenantResponseSchema = z.object({
-  id: z.uuid(),
-  subscriptionId: z.uuid().nullable(),
-  ownerId: z.uuid(),
+  id: uuidSchema(),
+  subscriptionId: uuidSchema().nullable(),
+  ownerId: uuidSchema(),
   name: z.string(),
   slug: z.string(),
   logoUrl: z.string().nullable(),
@@ -197,9 +198,9 @@ export const tenantResponseSchema = z.object({
 export type TenantResponse = z.infer<typeof tenantResponseSchema>;
 
 export const tenantMemberResponseSchema = z.object({
-  id: z.uuid(),
-  tenantId: z.uuid(),
-  userId: z.uuid(),
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
+  userId: uuidSchema(),
   userFullName: z.string(),
   userEmail: z.string(),
   role: tenantStaffRoleEnum,
@@ -210,11 +211,11 @@ export const tenantMemberResponseSchema = z.object({
 export type TenantMemberResponse = z.infer<typeof tenantMemberResponseSchema>;
 
 export const tenantCustomerResponseSchema = z.object({
-  id: z.uuid(),
-  tenantId: z.uuid(),
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
   tenantName: z.string(),
   tenantSlug: z.string(),
-  userId: z.uuid(),
+  userId: uuidSchema(),
   userFullName: z.string(),
   userEmail: z.string(),
   loyaltyPoints: z.number().int(),

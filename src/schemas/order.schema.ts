@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   deliveryTypeEnum,
   orderStatusEnum,
+  uuidSchema,
   wgs84LatSchema,
   wgs84LngSchema,
 } from "./common.schema";
@@ -10,7 +11,7 @@ import {
 
 export const orderCheckoutRequestSchema = z.object({
   deliveryType: deliveryTypeEnum,
-  customerAddressId: z.uuid("ID de dirección inválido").nullable().optional(),
+  customerAddressId: uuidSchema("ID de dirección inválido").nullable().optional(),
   deliveryAddress: z
     .string()
     .max(255, "La dirección no puede exceder 255 caracteres")
@@ -44,7 +45,7 @@ export type OrderStatusUpdateRequest = z.infer<
 >;
 
 export const orderAssignStaffRequestSchema = z.object({
-  deliveryStaffId: z.uuid("ID de repartidor inválido"),
+  deliveryStaffId: uuidSchema("ID de repartidor inválido"),
 });
 export type OrderAssignStaffRequest = z.infer<
   typeof orderAssignStaffRequestSchema
@@ -53,10 +54,10 @@ export type OrderAssignStaffRequest = z.infer<
 // ─── Response DTOs (6. Order) ────────────────────────────────────────────────
 
 export const orderItemResponseSchema = z.object({
-  id: z.uuid(),
-  productId: z.uuid().nullable(),
+  id: uuidSchema(),
+  productId: uuidSchema().nullable(),
   productName: z.string(),
-  taxId: z.uuid().nullable(),
+  taxId: uuidSchema().nullable(),
   taxRate: z.number(),
   taxAmount: z.number(),
   unitPrice: z.number(),
@@ -69,16 +70,16 @@ export const orderItemResponseSchema = z.object({
 export type OrderItemResponse = z.infer<typeof orderItemResponseSchema>;
 
 export const orderResponseSchema = z.object({
-  id: z.uuid(),
-  tenantId: z.uuid(),
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
   tenantSlug: z.string(),
   tenantName: z.string(),
-  customerId: z.uuid(),
-  customerUserId: z.uuid(),
+  customerId: uuidSchema(),
+  customerUserId: uuidSchema(),
   customerFullName: z.string().nullable(),
   customerEmail: z.string().nullable(),
   customerPhone: z.string().nullable(),
-  deliveryStaffId: z.uuid().nullable(),
+  deliveryStaffId: uuidSchema().nullable(),
   deliveryStaffName: z.string().nullable(),
   orderNumber: z.string(),
   ruc: z.string().nullable(),

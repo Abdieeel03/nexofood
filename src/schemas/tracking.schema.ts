@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { orderStatusEnum, wgs84LatSchema, wgs84LngSchema } from "./common.schema";
+import {
+  orderStatusEnum,
+  uuidSchema,
+  wgs84LatSchema,
+  wgs84LngSchema,
+} from "./common.schema";
 
 // ─── Request DTOs (8. Tracking) ──────────────────────────────────────────────
 
@@ -41,7 +46,7 @@ export const trackingPointResponseSchema = z.object({
 export type TrackingPointResponse = z.infer<typeof trackingPointResponseSchema>;
 
 export const deliveryEstimateResponseSchema = z.object({
-  tenantId: z.uuid(),
+  tenantId: uuidSchema(),
   tenantSlug: z.string(),
   tenantName: z.string(),
   withinCoverage: z.boolean(),
@@ -60,17 +65,17 @@ export type DeliveryEstimateResponse = z.infer<
 >;
 
 export const deliveryTrackingResponseSchema = z.object({
-  orderId: z.uuid(),
+  orderId: uuidSchema(),
   orderNumber: z.string(),
   orderStatus: orderStatusEnum,
-  tenantId: z.uuid(),
+  tenantId: uuidSchema(),
   tenantName: z.string(),
   storeLatitude: z.number().nullable(),
   storeLongitude: z.number().nullable(),
   deliveryAddress: z.string().nullable(),
   destinationLatitude: z.number().nullable(),
   destinationLongitude: z.number().nullable(),
-  driverId: z.uuid().nullable(),
+  driverId: uuidSchema().nullable(),
   driverName: z.string().nullable(),
   driverPhone: z.string().nullable(),
   driverLatitude: z.number().nullable(),

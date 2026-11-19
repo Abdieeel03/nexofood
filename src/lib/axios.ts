@@ -1,26 +1,118 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { errorResponseSchema } from "@/schemas/common.schema";
+import { isProtectedPath } from "./auth-constants";
 
-// ─── Constantes ───────────────────────────────────────────────────────
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+// ─── Constantes de Base URL ───────────────────────────────────────────────────
 
-export const SERVER_API_BASE_URL =
+export const API_BASE_URL = "/api/bff";
+
+export const SERVER_API_BASE_URL = (
   process.env.API_INTERNAL_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8080/api";
+  "http://localhost:8080/api/v1"
+).replace(/\/+$/, "");
 
-// ─── Instancia CLIENTE (Browser) ──────────────────────────────────────
+// ─── Error Tipado de API ──────────────────────────────────────────────────────
+
+export function parseRetryAfterSeconds(headerValue: unknown): number | undefined {
+  if (typeof headerValue === "number" && Number.isFinite(headerValue)) {
+    return Math.max(0, Math.ceil(headerValue));
+  }
+  if (typeof headerValue !== "string") return undefined;
+
+  const trimmed = headerValue.trim();
+  if (!trimmed) return undefined;
+
+  if (/^\d+$/.test(trimmed)) {
+    return Number.parseInt(trimmed, 10);
+  }
+
+  const parsedDate = Date.parse(trimmed);
+  if (!Number.isNaN(parsedDate)) {
+    return Math.max(0, Math.ceil((parsedDate - Date.now()) / 1000));
+  }
+
+  return undefined;
+}
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public statusText: string,
+    public data: unknown,
+    message?: string,
+    public retryAfter?: number
+  ) {
+    super(message || `API Error: ${status} ${statusText}`);
+    this.name = "ApiError";
+  }
+
+  static fromAxiosError(error: AxiosError): ApiError {
+    const status = error.response?.status ?? 0;
+    const statusText =
+      error.response?.statusText ?? (error.code || "Network Error");
+    const data = error.response?.data;
+    const retryAfter = parseRetryAfterSeconds(
+      error.response?.headers?.["retry-after"]
+    );
+
+    const parsedError = errorResponseSchema.safeParse(data);
+    let message = error.message;
+
+    if (parsedError.success && parsedError.data.message.trim().length > 0) {
+      message = parsedError.data.message;
+    } else if (
+      data &&
+      typeof data === "object" &&
+      "message" in data &&
+      typeof (data as { message: unknown }).message === "string" &&
+      (data as { message: string }).message.trim().length > 0
+    ) {
+      message = (data as { message: string }).message;
+    } else if (
+      data &&
+      typeof data === "object" &&
+      "error" in data &&
+      typeof (data as { error: unknown }).error === "string"
+    ) {
+      message = (data as { error: string }).error;
+    }
+
+    return new ApiError(status, statusText, data, message, retryAfter);
+  }
+}
+
+export function isApiError(error: unknown): error is ApiError {
+  return error instanceof ApiError;
+}
+
+export function getApiErrorMessage(
+  error: unknown,
+  fallback = "Ocurrió un error inesperado. Intenta nuevamente."
+): string {
+  if (error instanceof ApiError) {
+    return error.message || fallback;
+  }
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+  return fallback;
+}
+
+// ─── Instancia CLIENTE (Browser -> BFF Proxy `/api/bff`) ─────────────────────
+
 export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15_000,
-  withCredentials: true, // Envía cookies httpOnly automáticamente desde el navegador
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
 });
 
-// ─── Instancia SERVIDOR (SSR / Server Actions / Route Handlers) ────────
+// ─── Instancia SERVIDOR (SSR / Server Actions -> Backend directo) ──────────────
+
 export const axiosServer = axios.create({
   baseURL: SERVER_API_BASE_URL,
   timeout: 15_000,
@@ -30,11 +122,14 @@ export const axiosServer = axios.create({
   },
 });
 
-// ─── REQUEST INTERCEPTOR (Cliente) ───────────────────────────────────
-// Agrega headers comunes y trazabilidad sin exponer credenciales
+// ─── Request Interceptor (Cliente) ───────────────────────────────────────────
+
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
       config.headers.set("X-Request-Id", crypto.randomUUID());
     }
     return config;
@@ -42,67 +137,32 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── RESPONSE INTERCEPTOR (Cliente) ── Refresh Token Rotation ────────
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: unknown) => void;
-}> = [];
-
-const processQueue = (error: AxiosError | null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve();
-    }
-  });
-  failedQueue = [];
-};
+// ─── Response Interceptor (Cliente) ──────────────────────────────────────────
+// El BFF `/api/bff` ya ejecuta single-flight refresh ante 401 del backend.
+// Si el navegador aún recibe 401, la sesión expiró o no existe: redirigir a
+// `/?session_expired=true` SOLO en rutas SaaS/Admin/Account protegidas.
 
 axiosClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as
-      | (InternalAxiosRequestConfig & { _retry?: boolean })
-      | undefined;
-
-    // Si no hay config original o no es 401 o ya se reintentó, propagar error
-    if (!originalRequest || error.response?.status !== 401 || originalRequest._retry) {
-      return Promise.reject(error);
-    }
-
-    // Si ya hay un refresco en progreso, encolar el request
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      }).then(() => axiosClient(originalRequest));
-    }
-
-    originalRequest._retry = true;
-    isRefreshing = true;
-
-    try {
-      // Llamar al Route Handler interno de Next.js
-      await axios.post("/api/auth/refresh", null, {
-        withCredentials: true,
-      });
-
-      processQueue(null);
-      return axiosClient(originalRequest);
-    } catch (refreshError) {
-      processQueue(refreshError as AxiosError);
-      if (typeof window !== "undefined") {
-        window.location.href = "/?session_expired=true";
+  (error: AxiosError) => {
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      const { pathname } = window.location;
+      if (isProtectedPath(pathname)) {
+        const loginUrl = new URL("/", window.location.origin);
+        loginUrl.searchParams.set("session_expired", "true");
+        loginUrl.searchParams.set("callbackUrl", pathname);
+        window.location.href = loginUrl.toString();
       }
-      return Promise.reject(refreshError);
-    } finally {
-      isRefreshing = false;
     }
+
+    return Promise.reject(error);
   }
 );
 
-// ─── Helper de Autorización en Servidor ─────────────────────────────
-export function applyServerTokenInterceptor(token: string | undefined): Record<string, string> {
+// ─── Helper de Autorización en Servidor ──────────────────────────────────────
+
+export function applyServerTokenInterceptor(
+  token: string | undefined
+): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }

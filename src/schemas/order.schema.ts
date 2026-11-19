@@ -1,79 +1,105 @@
 import { z } from "zod";
-import { customerAddressSchema } from "./auth.schema";
+import {
+  deliveryTypeEnum,
+  orderStatusEnum,
+  wgs84LatSchema,
+  wgs84LngSchema,
+} from "./common.schema";
 
-/**
- * Estados posibles de una orden en el sistema
- */
-export const orderStatusEnum = z.enum([
-  "PENDING",
-  "CONFIRMED",
-  "PREPARING",
-  "READY",
-  "DELIVERED",
-  "CANCELLED",
-]);
+// ─── Request DTOs (6. Order) ─────────────────────────────────────────────────
 
-/**
- * Métodos de pago soportados
- */
-export const paymentMethodEnum = z.enum(["CASH", "CARD", "TRANSFER"]);
-
-/**
- * Esquema para un ítem dentro de la creación de una orden
- */
-export const orderItemRequestSchema = z.object({
-  productId: z.uuidv4("ID de producto inválido"),
-  quantity: z
-    .number()
-    .int("La cantidad debe ser un entero")
-    .min(1, "La cantidad mínima es 1"),
-  unitPrice: z.number().positive().optional(),
-  notes: z.string().optional(),
+export const orderCheckoutRequestSchema = z.object({
+  deliveryType: deliveryTypeEnum,
+  customerAddressId: z.uuid("ID de dirección inválido").nullable().optional(),
+  deliveryAddress: z
+    .string()
+    .max(255, "La dirección no puede exceder 255 caracteres")
+    .nullable()
+    .optional(),
+  deliveryLatitude: wgs84LatSchema.nullable().optional(),
+  deliveryLongitude: wgs84LngSchema.nullable().optional(),
+  ruc: z.string().max(20, "El RUC no puede exceder 20 caracteres").nullable().optional(),
+  notes: z
+    .string()
+    .max(1000, "Las notas no pueden exceder 1000 caracteres")
+    .nullable()
+    .optional(),
 });
+export type OrderCheckoutRequest = z.infer<typeof orderCheckoutRequestSchema>;
 
-/**
- * Esquema para creación de una nueva orden
- */
-export const orderCreateSchema = z.object({
-  items: z
-    .array(orderItemRequestSchema)
-    .min(1, "La orden debe contener al menos un producto"),
-  deliveryAddressId: z.uuidv4("ID de dirección inválido").optional(),
-  deliveryAddress: customerAddressSchema.optional(),
-  paymentMethod: paymentMethodEnum.or(z.string()),
-  notes: z.string().max(255, "Las notas no pueden exceder 255 caracteres").optional(),
+export const orderCancelRequestSchema = z.object({
+  reason: z
+    .string()
+    .max(500, "El motivo no puede exceder 500 caracteres")
+    .nullable()
+    .optional(),
 });
+export type OrderCancelRequest = z.infer<typeof orderCancelRequestSchema>;
 
-/**
- * Esquema para un ítem dentro de la respuesta de una orden
- */
+export const orderStatusUpdateRequestSchema = z.object({
+  status: orderStatusEnum,
+});
+export type OrderStatusUpdateRequest = z.infer<
+  typeof orderStatusUpdateRequestSchema
+>;
+
+export const orderAssignStaffRequestSchema = z.object({
+  deliveryStaffId: z.uuid("ID de repartidor inválido"),
+});
+export type OrderAssignStaffRequest = z.infer<
+  typeof orderAssignStaffRequestSchema
+>;
+
+// ─── Response DTOs (6. Order) ────────────────────────────────────────────────
+
 export const orderItemResponseSchema = z.object({
-  id: z.uuidv4(),
-  productId: z.uuidv4(),
-  productName: z.string().optional(),
-  quantity: z.number().int(),
+  id: z.uuid(),
+  productId: z.uuid().nullable(),
+  productName: z.string(),
+  taxId: z.uuid().nullable(),
+  taxRate: z.number(),
+  taxAmount: z.number(),
   unitPrice: z.number(),
-  totalPrice: z.number(),
-});
-
-/**
- * Esquema de respuesta con los datos de una orden
- */
-export const orderResponseSchema = z.object({
-  id: z.uuidv4(),
-  orderNumber: z.string().optional(),
-  status: orderStatusEnum.or(z.string()),
-  totalAmount: z.number(),
-  items: z.array(orderItemResponseSchema).default([]),
-  notes: z.string().nullable().optional(),
+  quantity: z.number().int(),
+  subtotal: z.number(),
+  notes: z.string().nullable(),
   createdAt: z.string(),
-  updatedAt: z.string().optional(),
+  updatedAt: z.string(),
 });
-
-// Inferencia de tipos TypeScript
-export type OrderStatus = z.infer<typeof orderStatusEnum>;
-export type PaymentMethod = z.infer<typeof paymentMethodEnum>;
-export type OrderItemRequest = z.infer<typeof orderItemRequestSchema>;
-export type OrderCreateInput = z.infer<typeof orderCreateSchema>;
 export type OrderItemResponse = z.infer<typeof orderItemResponseSchema>;
+
+export const orderResponseSchema = z.object({
+  id: z.uuid(),
+  tenantId: z.uuid(),
+  tenantSlug: z.string(),
+  tenantName: z.string(),
+  customerId: z.uuid(),
+  customerUserId: z.uuid(),
+  customerFullName: z.string().nullable(),
+  customerEmail: z.string().nullable(),
+  customerPhone: z.string().nullable(),
+  deliveryStaffId: z.uuid().nullable(),
+  deliveryStaffName: z.string().nullable(),
+  orderNumber: z.string(),
+  ruc: z.string().nullable(),
+  deliveryType: deliveryTypeEnum,
+  status: orderStatusEnum,
+  deliveryAddress: z.string().nullable(),
+  deliveryLatitude: z.number().nullable(),
+  deliveryLongitude: z.number().nullable(),
+  estimatedDistanceKm: z.number().nullable(),
+  estimatedDeliveryMinutes: z.number().int().nullable(),
+  estimatedArrivalAt: z.string().nullable(),
+  etaMessage: z.string().nullable(),
+  dispatchedAt: z.string().nullable(),
+  deliveredAt: z.string().nullable(),
+  subtotal: z.number(),
+  taxTotal: z.number(),
+  deliveryFee: z.number(),
+  total: z.number(),
+  notes: z.string().nullable(),
+  items: z.array(orderItemResponseSchema),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 export type OrderResponse = z.infer<typeof orderResponseSchema>;

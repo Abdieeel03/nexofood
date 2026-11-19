@@ -188,6 +188,18 @@ export function OnboardingFlow() {
     name: "slug",
   });
 
+  const updateCoords = (latitude: number | null, longitude: number | null) => {
+    tenantForm.setValue("latitude", latitude, {
+      shouldValidate: false,
+      shouldDirty: true,
+    });
+    tenantForm.setValue("longitude", longitude, {
+      shouldValidate: false,
+      shouldDirty: true,
+    });
+    void tenantForm.trigger(["latitude", "longitude"]);
+  };
+
   const createTenantMutation = useMutation({
     mutationFn: (values: TenantCreateRequest) => {
       const hasBothCoords =
@@ -580,7 +592,9 @@ export function OnboardingFlow() {
                     onChange: (e) => {
                       if (!slugEditedManually) {
                         tenantForm.setValue("slug", slugify(e.target.value), {
-                          shouldValidate: false,
+                          shouldValidate:
+                            Boolean(tenantForm.formState.errors.slug) ||
+                            tenantForm.formState.isSubmitted,
                         });
                       }
                     },
@@ -783,14 +797,7 @@ export function OnboardingFlow() {
                 {(watchedLat !== null || watchedLng !== null) && (
                   <button
                     type="button"
-                    onClick={() => {
-                      tenantForm.setValue("latitude", null, {
-                        shouldValidate: true,
-                      });
-                      tenantForm.setValue("longitude", null, {
-                        shouldValidate: true,
-                      });
-                    }}
+                    onClick={() => updateCoords(null, null)}
                     className="text-xs font-semibold text-on-surface-variant hover:text-error cursor-pointer"
                   >
                     Limpiar coordenadas
@@ -802,16 +809,9 @@ export function OnboardingFlow() {
                 latitude={watchedLat}
                 longitude={watchedLng}
                 radiusKm={watchedRadius ?? 5}
-                onChange={({ latitude, longitude }) => {
-                  tenantForm.setValue("latitude", latitude, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                  tenantForm.setValue("longitude", longitude, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  });
-                }}
+                onChange={({ latitude, longitude }) =>
+                  updateCoords(latitude, longitude)
+                }
               />
               {tenantForm.formState.errors.latitude && (
                 <p className="text-xs font-semibold text-error">

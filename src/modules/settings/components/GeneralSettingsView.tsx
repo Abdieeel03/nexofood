@@ -176,6 +176,18 @@ export function GeneralSettingsView() {
     name: "deliveryRadiusKm",
   });
 
+  const updateCoords = (latitude: number | null, longitude: number | null) => {
+    form.setValue("latitude", latitude, {
+      shouldValidate: false,
+      shouldDirty: true,
+    });
+    form.setValue("longitude", longitude, {
+      shouldValidate: false,
+      shouldDirty: true,
+    });
+    void form.trigger(["latitude", "longitude"]);
+  };
+
   if (!activeTenant) {
     return (
       <EmptyState
@@ -483,10 +495,7 @@ export function GeneralSettingsView() {
               {canEdit && (watchedLat !== null || watchedLng !== null) && (
                 <button
                   type="button"
-                  onClick={() => {
-                    form.setValue("latitude", null, { shouldValidate: true });
-                    form.setValue("longitude", null, { shouldValidate: true });
-                  }}
+                  onClick={() => updateCoords(null, null)}
                   className="text-xs font-semibold text-on-surface-variant hover:text-error cursor-pointer"
                 >
                   Omitir coordenadas en este guardado
@@ -499,16 +508,9 @@ export function GeneralSettingsView() {
               longitude={watchedLng}
               radiusKm={watchedRadius ?? activeTenant.deliveryRadiusKm}
               disabled={!canEdit}
-              onChange={({ latitude, longitude }) => {
-                form.setValue("latitude", latitude, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                });
-                form.setValue("longitude", longitude, {
-                  shouldValidate: true,
-                  shouldDirty: true,
-                });
-              }}
+              onChange={({ latitude, longitude }) =>
+                updateCoords(latitude, longitude)
+              }
             />
             {form.formState.errors.latitude && (
               <p className="text-xs font-semibold text-error">

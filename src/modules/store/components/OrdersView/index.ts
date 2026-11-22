@@ -1,1 +1,0 @@
-export { OrdersView } from "./OrdersView";

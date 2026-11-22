@@ -1,19 +1,15 @@
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
+import {
+  AUTH_COOKIE_NAME,
+  DEFAULT_ACCESS_EXPIRES_IN,
+  REFRESH_COOKIE_MAX_AGE,
+  REFRESH_COOKIE_NAME,
+} from "./auth-constants";
 
-/**
- * Nombres de cookies seguras para almacenamiento de sesión
- */
-export const AUTH_COOKIE_NAME = "nexofood_access_token";
-export const REFRESH_COOKIE_NAME = "nexofood_refresh_token";
+export { AUTH_COOKIE_NAME, REFRESH_COOKIE_NAME } from "./auth-constants";
 
-/**
- * Configuración base de seguridad para cookies httpOnly
- * - httpOnly: Inaccesible desde JavaScript en el cliente (Protección contra XSS)
- * - secure: Solo viaja en conexiones HTTPS en producción
- * - sameSite: 'lax' previene ataques CSRF en navegaciones externas
- * - path: '/' disponible en toda la aplicación
- */
-const BASE_COOKIE_OPTIONS = {
+export const BASE_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
@@ -27,32 +23,34 @@ export interface SetAuthCookiesParams {
 }
 
 /**
- * Guarda los tokens JWT en cookies seguras httpOnly (Usar en Server Actions o Route Handlers)
+ * Guarda los tokens JWT en cookies seguras httpOnly (Server Actions / Route Handlers).
  */
 export async function setAuthCookies({
   accessToken,
   refreshToken,
-  expiresIn = 3600, // 1 hora por defecto
+  expiresIn = DEFAULT_ACCESS_EXPIRES_IN,
 }: SetAuthCookiesParams): Promise<void> {
   const cookieStore = await cookies();
+  const maxAge =
+    typeof expiresIn === "number" && expiresIn > 0
+      ? expiresIn
+      : DEFAULT_ACCESS_EXPIRES_IN;
 
-  // Guardar Access Token
   cookieStore.set(AUTH_COOKIE_NAME, accessToken, {
     ...BASE_COOKIE_OPTIONS,
-    maxAge: expiresIn,
+    maxAge,
   });
 
-  // Guardar Refresh Token (7 días por defecto)
   if (refreshToken) {
     cookieStore.set(REFRESH_COOKIE_NAME, refreshToken, {
       ...BASE_COOKIE_OPTIONS,
-      maxAge: 60 * 60 * 24 * 7, // 7 días
+      maxAge: REFRESH_COOKIE_MAX_AGE,
     });
   }
 }
 
 /**
- * Obtiene el access token actual desde la cookie httpOnly (Server-side)
+ * Obtiene el access token actual desde la cookie httpOnly (Server-side).
  */
 export async function getAccessToken(): Promise<string | undefined> {
   const cookieStore = await cookies();
@@ -60,7 +58,7 @@ export async function getAccessToken(): Promise<string | undefined> {
 }
 
 /**
- * Obtiene el refresh token actual desde la cookie httpOnly (Server-side)
+ * Obtiene el refresh token actual desde la cookie httpOnly (Server-side).
  */
 export async function getRefreshToken(): Promise<string | undefined> {
   const cookieStore = await cookies();
@@ -68,7 +66,7 @@ export async function getRefreshToken(): Promise<string | undefined> {
 }
 
 /**
- * Elimina las cookies de sesión (Cerrar sesión)
+ * Elimina las cookies de sesión httpOnly.
  */
 export async function removeAuthCookies(): Promise<void> {
   const cookieStore = await cookies();
@@ -77,9 +75,62 @@ export async function removeAuthCookies(): Promise<void> {
 }
 
 /**
- * Comprueba si hay un access token activo
+ * Comprueba si hay un access token o refresh token presente en cookies.
+ */
+export async function hasSessionCookies(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return Boolean(
+    cookieStore.get(AUTH_COOKIE_NAME)?.value ||
+      cookieStore.get(REFRESH_COOKIE_NAME)?.value
+  );
+}
+
+/**
+ * Comprueba si existe una cookie de access token activa.
  */
 export async function isAuthenticated(): Promise<boolean> {
   const token = await getAccessToken();
   return Boolean(token);
+}
+
+/**
+ * Adjunta cookies rotadas directamente sobre una instancia de `NextResponse`.
+ */
+export function applyAuthCookiesToResponse(
+  res: NextResponse,
+  tokens: SetAuthCookiesParams
+): NextResponse {
+  const maxAge =
+    typeof tokens.expiresIn === "number" && tokens.expiresIn > 0
+      ? tokens.expiresIn
+      : DEFAULT_ACCESS_EXPIRES_IN;
+
+  res.cookies.set(AUTH_COOKIE_NAME, tokens.accessToken, {
+    ...BASE_COOKIE_OPTIONS,
+    maxAge,
+  });
+
+  if (tokens.refreshToken) {
+    res.cookies.set(REFRESH_COOKIE_NAME, tokens.refreshToken, {
+      ...BASE_COOKIE_OPTIONS,
+      maxAge: REFRESH_COOKIE_MAX_AGE,
+    });
+  }
+
+  return res;
+}
+
+/**
+ * Expira explícitamente las cookies de sesión en una instancia de `NextResponse`.
+ */
+export function clearAuthCookiesOnResponse(res: NextResponse): NextResponse {
+  res.cookies.set(AUTH_COOKIE_NAME, "", {
+    ...BASE_COOKIE_OPTIONS,
+    maxAge: 0,
+  });
+  res.cookies.set(REFRESH_COOKIE_NAME, "", {
+    ...BASE_COOKIE_OPTIONS,
+    maxAge: 0,
+  });
+  return res;
 }

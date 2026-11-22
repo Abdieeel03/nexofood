@@ -1,27 +1,44 @@
-'use client';
+"use client";
 
-import { useTransition } from 'react';
-import { logoutAction } from '@/lib/auth-actions';
-import { Button } from './Button';
+import { useTransition } from "react";
+import { logoutAction } from "@/lib/auth-actions";
+import { Button, type ButtonSize, type ButtonVariant } from "./Button";
 
-export const LogoutButton = () => {
+export interface LogoutButtonProps {
+  redirectTo?: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+  label?: string;
+}
+
+export const LogoutButton = ({
+  redirectTo = "/",
+  variant = "outline",
+  size = "md",
+  className = "",
+  label = "Cerrar sesión",
+}: LogoutButtonProps) => {
   const [isPending, startTransition] = useTransition();
 
   const handleLogout = () => {
     startTransition(async () => {
-      await logoutAction();
+      await logoutAction(redirectTo);
     });
   };
 
   return (
-    <Button 
-      variant="outline"
-      size="md"
+    <Button
+      type="button"
+      variant={variant}
+      size={size}
+      icon="logout"
+      iconPosition="left"
       onClick={handleLogout}
-      disabled={isPending}
-      className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 hover:border-red-300 cursor-pointer"
+      isLoading={isPending}
+      className={`text-error border-error/30 hover:bg-error-container/40 hover:text-on-error-container hover:border-error/50 ${className}`}
     >
-      {isPending ? 'Cerrando sesión...' : 'Cerrar sesión'}
+      {isPending ? "Cerrando sesión..." : label}
     </Button>
   );
 };

@@ -2,144 +2,181 @@
 
 import React from "react";
 import { Draggable } from "@hello-pangea/dnd";
+import { Badge } from "@/components/ui/Badge";
+import { Icon } from "@/components/ui/Icon";
+import { formatCurrencyPEN } from "@/lib/format";
+import {
+  DELIVERY_TYPE_META,
+  getAllowedNextStatuses,
+} from "@/lib/order-state-machine";
+import type {
+  OrderStatus,
+  TenantStaffRole,
+  UserSystemRole,
+} from "@/schemas/common.schema";
+import type { OrderResponse } from "@/schemas/order.schema";
+import { formatElapsedDuration } from "../utils/time";
 
-export type OrderStatus = "new" | "in_prep" | "ready" | "delivered";
-
-export interface OrderItem {
-  name: string;
-  quantity: number;
-  notes?: string;
-}
-
-export interface Order {
-  id: string;
-  ticketNumber: string;
-  tableOrChannel: string;
-  channel: "dine_in" | "delivery" | "takeaway";
-  status: OrderStatus;
-  elapsedMinutes: number;
-  items: OrderItem[];
-  total: number;
-  isUrgent?: boolean;
-}
-
-interface OrderCardProps {
-  order: Order;
+export interface OrderCardProps {
+  order: OrderResponse;
   index: number;
-  onAdvance: (orderId: string) => void;
-  onSelect: (order: Order) => void;
+  activeRole: TenantStaffRole | null;
+  systemRole: UserSystemRole;
+  actorUserId: string;
+  nowMs: number;
+  isUpdating: boolean;
+  onAdvanceStatus: (orderId: string, nextStatus: OrderStatus) => void;
+  onSelect: (order: OrderResponse) => void;
 }
 
-export function OrderCard({ order, index, onAdvance, onSelect }: OrderCardProps) {
-  const getNextAction = (status: OrderStatus) => {
-    switch (status) {
-      case "new":
-        return { label: "A Cocina", icon: "skillet", nextStatus: "in_prep" };
-      case "in_prep":
-        return { label: "Listo en Barra", icon: "room_service", nextStatus: "ready" };
-      case "ready":
-        return { label: "Despachar", icon: "moped", nextStatus: "delivered" };
-      case "delivered":
-        return null;
-    }
-  };
+const NEXT_ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
+  EN_PREPARACION: "A cocina",
+  LISTO_PARA_ENTREGA: "Marcar listo",
+  EN_CAMINO: "Despachar",
+  ENTREGADO: "Entregado",
+};
 
-  const nextAction = getNextAction(order.status);
+export function OrderCard({
+  order,
+  index,
+  activeRole,
+  systemRole,
+  actorUserId,
+  nowMs,
+  isUpdating,
+  onAdvanceStatus,
+  onSelect,
+}: OrderCardProps) {
+  const deliveryMeta = DELIVERY_TYPE_META[order.deliveryType];
+  const allowedNext = getAllowedNextStatuses(
+    order,
+    activeRole,
+    systemRole,
+    actorUserId
+  ).filter((st) => st !== "CANCELADO");
 
-  const channelBadges = {
-    dine_in: { text: "Salón", bg: "bg-blue-50 text-blue-700 border-blue-200" },
-    delivery: { text: "Delivery", bg: "bg-orange-50 text-orange-700 border-orange-200" },
-    takeaway: { text: "Para Llevar", bg: "bg-purple-50 text-purple-700 border-purple-200" },
-  }[order.channel];
+  const primaryNext = allowedNext[0] ?? null;
+  const visibleItems = order.items.slice(0, 3);
+  const extraItemsCount = Math.max(0, order.items.length - visibleItems.length);
 
   return (
     <Draggable draggableId={order.id} index={index}>
       {(provided, snapshot) => (
-        <div
+        <article
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`bg-surface-card rounded-2xl border p-4 shadow-xs transition-all select-none ${
+          className={`rounded-2xl border bg-surface-card p-3.5 shadow-level-1 transition-shadow ${
             snapshot.isDragging
-              ? "border-primary shadow-lg ring-2 ring-primary/20 scale-[1.02]"
-              : "border-outline-variant/60 hover:border-outline-variant hover:shadow-sm"
+              ? "border-primary shadow-level-2 ring-2 ring-primary/25"
+              : "border-outline-variant/70 hover:border-outline"
           }`}
         >
-          {/* Header of Card with drag handle */}
-          <div className="flex items-center justify-between gap-2 mb-2.5">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
               <div
                 {...provided.dragHandleProps}
-                className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-outline hover:text-on-surface rounded"
-                title="Arrastrar para mover de columna"
+                aria-label={`Arrastrar pedido ${order.orderNumber}`}
+                className="cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-low"
               >
-                <span className="material-symbols-outlined text-lg leading-none">
-                  drag_indicator
-                </span>
+                <Icon name="drag_indicator" size={18} />
               </div>
-              <span className="text-xs font-black text-on-surface">
-                #{order.ticketNumber}
-              </span>
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${channelBadges.bg}`}
-              >
-                {channelBadges.text} • {order.tableOrChannel}
+              <span className="text-sm font-extrabold text-on-surface tabular-nums truncate">
+                {order.orderNumber}
               </span>
             </div>
 
-            <div className="flex items-center gap-1 text-[11px] font-semibold text-outline">
-              <span className="material-symbols-outlined text-sm">schedule</span>
-              <span>{order.elapsedMinutes}m</span>
-            </div>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-on-surface-variant tabular-nums shrink-0">
+              <Icon name="schedule" size={14} className="text-outline" />
+              <span>{formatElapsedDuration(order.createdAt, nowMs)}</span>
+            </span>
           </div>
 
-          {/* Items Preview */}
-          <div
-            onClick={() => onSelect(order)}
-            className="cursor-pointer space-y-1 py-1.5 border-y border-outline-variant/30 my-2"
-          >
-            {order.items.map((item, i) => (
-              <div key={i} className="flex items-start justify-between text-xs">
-                <span className="font-semibold text-on-surface">
-                  {item.quantity}x {item.name}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <Badge variant={deliveryMeta.variant} size="sm">
+              {deliveryMeta.label}
+            </Badge>
+            {order.deliveryType === "DELIVERY" && (
+              <Badge
+                variant={order.deliveryStaffName ? "neutral" : "warning"}
+                size="sm"
+              >
+                {order.deliveryStaffName
+                  ? order.deliveryStaffName
+                  : "Sin repartidor"}
+              </Badge>
+            )}
+          </div>
+
+          <div className="mt-2.5 text-xs text-on-surface-variant">
+            <p className="font-semibold text-on-surface truncate">
+              {order.customerFullName || order.customerEmail || "Comensal"}
+            </p>
+            {order.deliveryType === "DELIVERY" && order.deliveryAddress && (
+              <p className="mt-0.5 text-xs text-on-surface-variant line-clamp-1">
+                {order.deliveryAddress}
+              </p>
+            )}
+          </div>
+
+          <ul className="mt-2.5 space-y-1 border-y border-outline-variant/40 py-2 text-xs">
+            {visibleItems.map((item) => (
+              <li
+                key={item.id}
+                className="flex items-start justify-between gap-2 text-on-surface"
+              >
+                <span className="font-medium leading-snug">
+                  <strong className="tabular-nums">{item.quantity}×</strong>{" "}
+                  {item.productName}
                 </span>
                 {item.notes && (
-                  <span className="text-[10px] text-amber-600 bg-amber-50 px-1 rounded">
-                    {item.notes}
+                  <span className="shrink-0 rounded bg-[#fef3c7] px-1.5 py-0.5 text-[11px] font-semibold text-[#92400e]">
+                    Nota
                   </span>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+            {extraItemsCount > 0 && (
+              <li className="text-[11px] font-semibold text-on-surface-variant">
+                +{extraItemsCount} ítem(s) adicional(es)
+              </li>
+            )}
+          </ul>
 
-          {/* Footer of Card with total and advance button */}
-          <div className="flex items-center justify-between pt-1 mt-1">
-            <div className="text-xs font-bold text-on-surface">
-              S/ {order.total.toFixed(2)}
-            </div>
+          {order.notes && (
+            <p className="mt-2 rounded-lg bg-surface-container-low px-2.5 py-1.5 text-[11px] text-on-surface-variant line-clamp-2">
+              <strong className="text-on-surface">Obs:</strong> {order.notes}
+            </p>
+          )}
 
-            {nextAction && (
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <span className="text-sm font-extrabold text-on-surface tabular-nums">
+              {formatCurrencyPEN(order.total)}
+            </span>
+
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAdvance(order.id);
-                }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors"
-                title="Clic para avanzar a la siguiente etapa"
+                onClick={() => onSelect(order)}
+                className="inline-flex items-center gap-1 rounded-lg border border-outline-variant px-2.5 py-1.5 text-xs font-semibold text-on-surface hover:bg-surface-container-low cursor-pointer transition-colors"
               >
-                <span>{nextAction.label}</span>
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                <Icon name="receipt" size={14} />
+                <span>Auditar</span>
               </button>
-            )}
 
-            {!nextAction && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                Completado
-              </span>
-            )}
+              {primaryNext && (
+                <button
+                  type="button"
+                  disabled={isUpdating}
+                  onClick={() => onAdvanceStatus(order.id, primaryNext)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-on-primary hover:bg-on-primary-fixed-variant disabled:opacity-50 cursor-pointer transition-colors"
+                >
+                  <span>{NEXT_ACTION_LABEL[primaryNext] ?? "Avanzar"}</span>
+                  <Icon name="arrow_forward" size={14} />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        </article>
       )}
     </Draggable>
   );

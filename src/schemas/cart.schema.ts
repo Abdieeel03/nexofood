@@ -1,43 +1,85 @@
 import { z } from "zod";
+import { uuidSchema } from "./common.schema";
 
-/**
- * Esquema para agregar o modificar items en el carrito
- */
+// ─── Request DTOs (5. Cart) ──────────────────────────────────────────────────
+
 export const cartItemRequestSchema = z.object({
-  productId: z.uuidv4("ID de producto inválido"),
+  productId: uuidSchema("ID de producto inválido"),
   quantity: z
-    .number()
+    .number({ error: "La cantidad debe ser un número entero" })
     .int("La cantidad debe ser un número entero")
-    .min(1, "La cantidad mínima es 1"),
-  notes: z.string().max(255, "Las notas no pueden exceder 255 caracteres").optional(),
+    .min(1, "La cantidad mínima es 1")
+    .max(999, "La cantidad máxima es 999"),
+  notes: z
+    .string()
+    .max(500, "Las notas no pueden exceder 500 caracteres")
+    .nullable()
+    .optional(),
 });
-
-/**
- * Esquema de respuesta para un item en el carrito
- */
-export const cartItemResponseSchema = z.object({
-  id: z.uuidv4(),
-  productId: z.uuidv4(),
-  quantity: z.number().int().min(1),
-  notes: z.string().nullable().optional(),
-  unitPrice: z.number().optional(),
-  totalPrice: z.number().optional(),
-  productName: z.string().optional(),
-  productImageUrl: z.string().optional(),
-});
-
-/**
- * Esquema de respuesta general del carrito
- */
-export const cartResponseSchema = z.object({
-  id: z.uuidv4(),
-  userId: z.uuidv4().nullable().optional(),
-  items: z.array(cartItemResponseSchema).default([]),
-  subtotal: z.number().default(0),
-  total: z.number().default(0),
-});
-
-// Inferencia de tipos TypeScript
 export type CartItemRequest = z.infer<typeof cartItemRequestSchema>;
+
+export const cartItemUpdateRequestSchema = z
+  .object({
+    quantity: z
+      .number()
+      .int("La cantidad debe ser un número entero")
+      .min(1, "La cantidad mínima es 1")
+      .max(999, "La cantidad máxima es 999")
+      .optional(),
+    notes: z
+      .string()
+      .max(500, "Las notas no pueden exceder 500 caracteres")
+      .nullable()
+      .optional(),
+  })
+  .refine((data) => data.quantity !== undefined || data.notes !== undefined, {
+    message: "Debe proporcionar al menos la cantidad o las notas",
+  });
+export type CartItemUpdateRequest = z.infer<typeof cartItemUpdateRequestSchema>;
+
+export const cartNotesRequestSchema = z.object({
+  notes: z
+    .string()
+    .max(1000, "Las notas no pueden exceder 1000 caracteres")
+    .nullable()
+    .optional(),
+});
+export type CartNotesRequest = z.infer<typeof cartNotesRequestSchema>;
+
+// ─── Response DTOs (5. Cart) ─────────────────────────────────────────────────
+
+export const cartItemResponseSchema = z.object({
+  id: uuidSchema(),
+  productId: uuidSchema(),
+  productName: z.string(),
+  productImageUrl: z.string().nullable(),
+  unitPrice: z.number(),
+  previousUnitPrice: z.number().nullable(),
+  priceChanged: z.boolean(),
+  productAvailable: z.boolean(),
+  productStock: z.number().int(),
+  quantity: z.number().int(),
+  subtotal: z.number(),
+  notes: z.string().nullable(),
+  createdAt: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+});
 export type CartItemResponse = z.infer<typeof cartItemResponseSchema>;
+
+export const cartResponseSchema = z.object({
+  id: uuidSchema(),
+  tenantId: uuidSchema(),
+  tenantSlug: z.string().nullable(),
+  tenantName: z.string().nullable(),
+  customerId: uuidSchema(),
+  customerUserId: uuidSchema(),
+  total: z.number(),
+  notes: z.string().nullable(),
+  items: z.array(cartItemResponseSchema),
+  hasPriceChanges: z.boolean(),
+  hasUnavailableItems: z.boolean(),
+  warnings: z.array(z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 export type CartResponse = z.infer<typeof cartResponseSchema>;

@@ -1,100 +1,107 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
-
-const FOOTER_COLUMNS = [
-  {
-    title: "Para ti",
-    links: ["Soporte y ayuda", "Preguntas frecuentes", "Promociones exclusivas"],
-  },
-  {
-    title: "Para restaurantes",
-    links: ["Registra tu local", "Portal de socios", "Soluciones de delivery"],
-  },
-  {
-    title: "Legal",
-    links: ["Términos y condiciones", "Política de privacidad", "Libro de reclamaciones"],
-  },
-];
-
-const SOCIALS = [
-  { icon: "language", label: "Sitio web" },
-  { icon: "mail", label: "Correo" },
-  { icon: "share", label: "Compartir" },
-];
-
-const TRUST_BADGES = [
-  { icon: "lock", label: "Pagos Seguros PCI-DSS" },
-  { icon: "verified_user", label: "SSL 256-bit" },
-];
+import { LegalLinks } from "@/components/legal/LegalLinks";
+import { useActiveStoreSlug } from "../../hooks/use-active-store-slug";
 
 export const Footer: React.FC = () => {
+  const activeSlug = useActiveStoreSlug();
+
   return (
-    <footer className="mt-10 bg-surface-container-low border-t border-border-subtle pt-10 md:pt-12">
-      <div className="max-w-[1650px] mx-auto px-4 md:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-8 lg:gap-12 pb-10 md:pb-12">
-          {/* Marca */}
-          <div className="flex flex-col gap-4 sm:col-span-2 lg:col-span-1 lg:max-w-90">
+    <footer className="mt-16 bg-surface-container-low border-t border-outline-variant/50 pt-10 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-8 pb-8">
+          <div className="space-y-3 max-w-md">
             <Link
               href="/store"
-              className="flex items-center gap-1.5 w-fit text-xl sm:text-2xl font-extrabold text-primary tracking-tight"
+              className="inline-flex items-center gap-1.5 text-xl font-extrabold text-primary tracking-tight"
             >
-              <span>Nexofood</span>
+              <span>NexoFood</span>
               <span className="text-secondary-container flex items-center">
-                <Icon name="restaurant" size={24} fill />
+                <Icon name="restaurant" size={22} fill />
               </span>
             </Link>
-            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-              La mejor plataforma para descubrir y pedir tus comidas favoritas en minutos. Conectamos los mejores
-              sabores con tu hogar.
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Plataforma gastronómica directa para pedir de tu restaurante
+              favorito con precios en tiempo real, validación de cobertura y
+              pagos seguros con Mercado Pago.
             </p>
-            <div className="flex items-center gap-2 mt-1">
-              {SOCIALS.map((s) => (
-                <button
-                  key={s.icon}
-                  aria-label={s.label}
-                  className="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors hover:bg-primary-container hover:text-white cursor-pointer"
-                >
-                  <Icon name={s.icon} size={18} />
-                </button>
-              ))}
-            </div>
           </div>
 
-          {/* Columnas de enlaces */}
-          {FOOTER_COLUMNS.map((col) => (
-            <div key={col.title} className="flex flex-col gap-3 sm:gap-4">
-              <h4 className="text-xs sm:text-sm font-bold text-on-surface">{col.title}</h4>
-              <ul className="flex flex-col gap-2">
-                {col.links.map((label) => (
-                  <li key={label}>
+          <div className="space-y-3">
+            <h2 className="text-sm font-bold text-on-surface">Comensales</h2>
+            <ul className="space-y-2 text-sm text-on-surface-variant">
+              <li>
+                <Link
+                  href="/store"
+                  className="hover:text-primary transition-colors"
+                >
+                  Buscar restaurante por slug
+                </Link>
+              </li>
+              {activeSlug && (
+                <>
+                  <li>
                     <Link
-                      href="#"
-                      className="text-xs sm:text-sm text-on-surface-variant hover:text-primary transition-all inline-block hover:translate-x-0.5"
+                      href={`/store/${encodeURIComponent(activeSlug)}`}
+                      className="hover:text-primary transition-colors"
                     >
-                      {label}
+                      Menú del restaurante
                     </Link>
                   </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
+                  <li>
+                    <Link
+                      href={`/store/${encodeURIComponent(activeSlug)}/orders`}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Mis pedidos en esta tienda
+                    </Link>
+                  </li>
+                </>
+              )}
+              <li>
+                <Link
+                  href="/store/account"
+                  className="hover:text-primary transition-colors"
+                >
+                  Mi cuenta y direcciones
+                </Link>
+              </li>
+            </ul>
+          </div>
 
-      {/* Barra inferior */}
-      <div className="border-t border-border-subtle py-4">
-        <div className="max-w-[1650px] mx-auto px-4 md:px-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-center sm:text-left">
-          <p className="text-xs text-on-surface-variant">© 2026 NexoFood. Todos los derechos reservados.</p>
-          <div className="flex items-center gap-4 sm:gap-6 text-xs text-on-surface-variant">
-            {TRUST_BADGES.map((b) => (
-              <div key={b.icon} className="flex items-center gap-1.5">
-                <span className="text-primary flex">
-                  <Icon name={b.icon} size={16} />
-                </span>
-                <span>{b.label}</span>
-              </div>
-            ))}
+          <div className="space-y-3">
+            <h2 className="text-sm font-bold text-on-surface">
+              Para restaurantes
+            </h2>
+            <ul className="space-y-2 text-sm text-on-surface-variant">
+              <li>
+                <Link href="/" className="hover:text-primary transition-colors">
+                  Ingresar al panel SaaS
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/register"
+                  className="hover:text-primary transition-colors"
+                >
+                  Crear cuenta de restaurante
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-outline-variant/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-on-surface-variant">
+          <p>© 2026 NexoFood. Todos los derechos reservados.</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <LegalLinks />
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="lock" size={16} className="text-primary" />
+              <span>Checkout Mercado Pago</span>
+            </span>
           </div>
         </div>
       </div>

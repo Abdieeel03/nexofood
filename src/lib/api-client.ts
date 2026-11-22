@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { AxiosError, type AxiosRequestConfig } from "axios";
-import { axiosClient, API_BASE_URL } from "./axios";
+import { cleanPayload, type ApiResponse } from "@/schemas/common.schema";
+import { axiosClient, ApiError } from "./axios";
 
-export { API_BASE_URL } from "./axios";
+export { API_BASE_URL, ApiError, isApiError, getApiErrorMessage } from "./axios";
 
 export interface RequestOptions {
   body?: unknown;
@@ -13,38 +14,39 @@ export interface RequestOptions {
   signal?: AbortSignal;
 }
 
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    public statusText: string,
-    public data: unknown,
-    message?: string
-  ) {
-    super(message || `API Error: ${status} ${statusText}`);
-    this.name = "ApiError";
+function isPlainBody(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
   }
-
-  static fromAxiosError(error: AxiosError): ApiError {
-    const status = error.response?.status ?? 0;
-    const statusText = error.response?.statusText ?? (error.code || "Network Error");
-    const data = error.response?.data;
-    const message =
-      (data && typeof data === "object" && "message" in data && typeof (data as { message: unknown }).message === "string")
-        ? (data as { message: string }).message
-        : error.message;
-
-    return new ApiError(status, statusText, data, message);
-  }
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
 }
 
-/**
- * Función base de ejecución HTTP con Axios (Lado Cliente / Universal)
- */
-async function baseRequest<T>(
+function isApiEnvelope(value: unknown): value is ApiResponse<unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "success" in value &&
+    typeof (value as { success: unknown }).success === "boolean" &&
+    "data" in value
+  );
+}
+
+function validateData<T>(data: unknown, schema?: z.ZodTypeAny): T {
+  if (!schema) return data as T;
+  const parseResult = schema.safeParse(data);
+  if (!parseResult.success) {
+    console.error("[ApiClient] Error de validación Zod en respuesta:", parseResult.error);
+    throw new Error(`Error de validación del esquema: ${parseResult.error.message}`);
+  }
+  return parseResult.data as T;
+}
+
+async function baseRequestEnvelope<T>(
   endpoint: string,
   config: AxiosRequestConfig = {},
   options: RequestOptions = {}
-): Promise<T> {
+): Promise<ApiResponse<T>> {
   const { schema, token, headers: customHeaders, params, signal } = options;
 
   const cleanParams = params
@@ -61,10 +63,15 @@ async function baseRequest<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  const sanitizedData = isPlainBody(config.data)
+    ? cleanPayload(config.data)
+    : config.data;
+
   try {
-    const response = await axiosClient<T>({
+    const response = await axiosClient<unknown>({
       url: endpoint,
       ...config,
+      data: sanitizedData,
       params: cleanParams,
       headers: Object.keys(headers).length > 0 ? headers : undefined,
       signal,
@@ -72,16 +79,32 @@ async function baseRequest<T>(
 
     const rawData = response.data;
 
-    if (schema) {
-      const parseResult = schema.safeParse(rawData);
-      if (!parseResult.success) {
-        console.error("[ApiClient] Error de validación Zod en respuesta:", parseResult.error);
-        throw new Error(`Error de validación del esquema: ${parseResult.error.message}`);
+    if (isApiEnvelope(rawData)) {
+      if (!rawData.success) {
+        throw new ApiError(
+          response.status || 400,
+          "Business Error",
+          rawData,
+          typeof rawData.message === "string"
+            ? rawData.message
+            : "La operación no pudo completarse"
+        );
       }
-      return parseResult.data as T;
+
+      const validatedData = validateData<T>(rawData.data, schema);
+      return {
+        success: true,
+        message: typeof rawData.message === "string" ? rawData.message : "",
+        data: validatedData,
+      };
     }
 
-    return rawData;
+    const validatedData = validateData<T>(rawData, schema);
+    return {
+      success: true,
+      message: "",
+      data: validatedData,
+    };
   } catch (error) {
     if (error instanceof AxiosError) {
       throw ApiError.fromAxiosError(error);
@@ -90,8 +113,19 @@ async function baseRequest<T>(
   }
 }
 
+async function baseRequest<T>(
+  endpoint: string,
+  config: AxiosRequestConfig = {},
+  options: RequestOptions = {}
+): Promise<T> {
+  const envelope = await baseRequestEnvelope<T>(endpoint, config, options);
+  return envelope.data;
+}
+
 /**
- * Métodos HTTP universales
+ * Cliente HTTP universal (navegador -> `/api/bff/...`).
+ * Desempaqueta automáticamente `ApiResponse<T>` devolviendo `data: T`.
+ * Usa los métodos `*Raw` cuando necesites acceder a `message` (ej. `DELETE` o `PATCH` sin payload).
  */
 export const apiClient = {
   get: <T>(endpoint: string, options?: RequestOptions) =>
@@ -106,6 +140,21 @@ export const apiClient = {
   patch: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
     baseRequest<T>(endpoint, { method: "PATCH", data: body }, options),
 
-  delete: <T>(endpoint: string, options?: RequestOptions) =>
+  delete: <T = null>(endpoint: string, options?: RequestOptions) =>
     baseRequest<T>(endpoint, { method: "DELETE" }, options),
+
+  getRaw: <T>(endpoint: string, options?: RequestOptions) =>
+    baseRequestEnvelope<T>(endpoint, { method: "GET" }, options),
+
+  postRaw: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
+    baseRequestEnvelope<T>(endpoint, { method: "POST", data: body }, options),
+
+  putRaw: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
+    baseRequestEnvelope<T>(endpoint, { method: "PUT", data: body }, options),
+
+  patchRaw: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
+    baseRequestEnvelope<T>(endpoint, { method: "PATCH", data: body }, options),
+
+  deleteRaw: <T = null>(endpoint: string, options?: RequestOptions) =>
+    baseRequestEnvelope<T>(endpoint, { method: "DELETE" }, options),
 };

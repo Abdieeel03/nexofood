@@ -1,104 +1,179 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { saasOrdersKeys } from "../queries/keys";
+import type { OrderStatus, PageResponse } from "@/schemas/common.schema";
+import type { OrderResponse } from "@/schemas/order.schema";
+import { ordersKeys } from "../queries/keys";
 import {
-  updateSaasOrderStatus,
-  syncSaasOrders,
-  createSaasOrder,
+  assignOrderDriver,
+  updateOrderStatus,
 } from "../services/orders.service";
-import type { Order, OrderStatus } from "../components/OrderCard";
+
+interface UpdateOrderStatusVariables {
+  orderId: string;
+  status: OrderStatus;
+}
+
+interface UpdateOrderStatusContext {
+  previousLists: Array<
+    [readonly unknown[], PageResponse<OrderResponse> | undefined]
+  >;
+  previousDetail?: OrderResponse;
+  previousKds?: OrderResponse[];
+  previousDeliveries: Array<
+    [readonly unknown[], OrderResponse[] | undefined]
+  >;
+}
 
 /**
- * Mutación optimista para cambiar el estado de una comanda (ej. por botón "Avanzar").
- * Actualiza la UI instantáneamente y revierte los cambios si la llamada al servidor falla.
+ * Mutación optimista por pedido individual vía `PATCH /tenants/{tenantId}/orders/{id}/status`.
+ * Revierte exactamente las cachés modificadas ante `409 Conflict` (ej. PaymentGuard) o cualquier error.
  */
-export function useUpdateOrderStatusMutation() {
+export function useUpdateOrderStatusMutation(tenantId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation<
-    Order,
+    OrderResponse,
     Error,
-    { orderId: string; status: OrderStatus },
-    { previousOrders?: Order[] }
+    UpdateOrderStatusVariables,
+    UpdateOrderStatusContext
   >({
-    mutationFn: ({ orderId, status }) => updateSaasOrderStatus(orderId, status),
+    mutationFn: ({ orderId, status }) => {
+      if (!tenantId) {
+        return Promise.reject(new Error("No hay restaurante activo seleccionado."));
+      }
+      return updateOrderStatus(tenantId, orderId, { status });
+    },
 
-    // Paso 1: Actualización optimista antes de la respuesta de red
     onMutate: async ({ orderId, status }) => {
-      // Cancelar consultas en vuelo para evitar sobreescritura del estado optimista
-      await queryClient.cancelQueries({ queryKey: saasOrdersKeys.lists() });
+      if (!tenantId) {
+        return { previousLists: [], previousDeliveries: [] };
+      }
 
-      // Guardar instantánea (snapshot) del estado anterior
-      const previousOrders = queryClient.getQueryData<Order[]>(saasOrdersKeys.lists());
+      await queryClient.cancelQueries({ queryKey: ordersKeys.tenant(tenantId) });
 
-      // Aplicar cambio optimista en la caché
-      queryClient.setQueryData<Order[]>(saasOrdersKeys.lists(), (old = []) =>
-        old.map((order) =>
-          order.id === orderId ? { ...order, status } : order
-        )
+      const previousLists = queryClient.getQueriesData<
+        PageResponse<OrderResponse>
+      >({
+        queryKey: ordersKeys.lists(tenantId),
+      });
+      const previousDetail = queryClient.getQueryData<OrderResponse>(
+        ordersKeys.detail(tenantId, orderId)
+      );
+      const previousKds = queryClient.getQueryData<OrderResponse[]>(
+        ordersKeys.kds(tenantId)
+      );
+      const previousDeliveries = queryClient.getQueriesData<OrderResponse[]>({
+        queryKey: ordersKeys.deliveriesRoot(tenantId),
+      });
+
+      queryClient.setQueriesData<PageResponse<OrderResponse>>(
+        { queryKey: ordersKeys.lists(tenantId) },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            content: old.content.map((order) =>
+              order.id === orderId ? { ...order, status } : order
+            ),
+          };
+        }
       );
 
-      return { previousOrders };
+      if (previousDetail) {
+        queryClient.setQueryData<OrderResponse>(
+          ordersKeys.detail(tenantId, orderId),
+          { ...previousDetail, status }
+        );
+      }
+
+      if (previousKds) {
+        queryClient.setQueryData<OrderResponse[]>(
+          ordersKeys.kds(tenantId),
+          status === "EN_PREPARACION"
+            ? previousKds.map((o) => (o.id === orderId ? { ...o, status } : o))
+            : previousKds.filter((o) => o.id !== orderId)
+        );
+      }
+
+      queryClient.setQueriesData<OrderResponse[]>(
+        { queryKey: ordersKeys.deliveriesRoot(tenantId) },
+        (old) => {
+          if (!old) return old;
+          return old.map((order) =>
+            order.id === orderId ? { ...order, status } : order
+          );
+        }
+      );
+
+      return {
+        previousLists,
+        previousDetail,
+        previousKds,
+        previousDeliveries,
+      };
     },
 
-    // Paso 2: Reversión en caso de error
-    onError: (_err, _variables, context) => {
-      if (context?.previousOrders) {
-        queryClient.setQueryData(saasOrdersKeys.lists(), context.previousOrders);
+    onError: (_err, { orderId }, context) => {
+      if (!tenantId || !context) return;
+
+      for (const [key, data] of context.previousLists) {
+        queryClient.setQueryData(key, data);
+      }
+      if (context.previousDetail !== undefined) {
+        queryClient.setQueryData(
+          ordersKeys.detail(tenantId, orderId),
+          context.previousDetail
+        );
+      }
+      if (context.previousKds !== undefined) {
+        queryClient.setQueryData(ordersKeys.kds(tenantId), context.previousKds);
+      }
+      for (const [key, data] of context.previousDeliveries) {
+        queryClient.setQueryData(key, data);
       }
     },
 
-    // Paso 3: Invalidación dirigida tras la resolución
+    onSuccess: (updatedOrder) => {
+      if (!tenantId) return;
+      queryClient.setQueryData(
+        ordersKeys.detail(tenantId, updatedOrder.id),
+        updatedOrder
+      );
+    },
+
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: saasOrdersKeys.lists() });
+      if (!tenantId) return;
+      queryClient.invalidateQueries({ queryKey: ordersKeys.tenant(tenantId) });
+      queryClient.invalidateQueries({ queryKey: ["tracking", tenantId] });
     },
   });
 }
 
 /**
- * Mutación optimista para reordenamiento y arrastre de comandas (Drag & Drop en Kanban).
+ * Mutación para asignar repartidor activo a un pedido `DELIVERY`.
  */
-export function useReorderOrdersMutation() {
+export function useAssignOrderDriverMutation(tenantId: string | undefined) {
   const queryClient = useQueryClient();
 
-  return useMutation<Order[], Error, Order[], { previousOrders?: Order[] }>({
-    mutationFn: (newOrders) => syncSaasOrders(newOrders),
-
-    onMutate: async (newOrders) => {
-      await queryClient.cancelQueries({ queryKey: saasOrdersKeys.lists() });
-
-      const previousOrders = queryClient.getQueryData<Order[]>(saasOrdersKeys.lists());
-
-      // Inmediatamente mostrar el nuevo orden de tarjetas
-      queryClient.setQueryData<Order[]>(saasOrdersKeys.lists(), newOrders);
-
-      return { previousOrders };
-    },
-
-    onError: (_err, _variables, context) => {
-      if (context?.previousOrders) {
-        queryClient.setQueryData(saasOrdersKeys.lists(), context.previousOrders);
+  return useMutation<
+    OrderResponse,
+    Error,
+    { orderId: string; deliveryStaffId: string }
+  >({
+    mutationFn: ({ orderId, deliveryStaffId }) => {
+      if (!tenantId) {
+        return Promise.reject(new Error("No hay restaurante activo seleccionado."));
       }
+      return assignOrderDriver(tenantId, orderId, { deliveryStaffId });
     },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: saasOrdersKeys.lists() });
-    },
-  });
-}
-
-/**
- * Mutación para crear comanda desde POS / Modal.
- */
-export function useCreateSaasOrderMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation<Order, Error, Order>({
-    mutationFn: (newOrder) => createSaasOrder(newOrder),
-    onSuccess: () => {
-      // Invalidación dirigida tras escritura
-      queryClient.invalidateQueries({ queryKey: saasOrdersKeys.lists() });
+    onSuccess: (updatedOrder) => {
+      if (!tenantId) return;
+      queryClient.setQueryData(
+        ordersKeys.detail(tenantId, updatedOrder.id),
+        updatedOrder
+      );
+      queryClient.invalidateQueries({ queryKey: ordersKeys.tenant(tenantId) });
     },
   });
 }

@@ -12,13 +12,14 @@ import type {
   DeliveryTrackingResponse,
   DriverLocationUpdateRequest,
 } from "@/schemas/tracking.schema";
-import { useSendDriverLocationMutation } from "../mutations/use-tracking-mutations";
-import { useOrderTrackingQuery } from "../queries/use-tracking-queries";
+import { useSendDriverOrderLocationMutation } from "../mutations/use-tracking-mutations";
+import { useDriverOrderTrackingQuery } from "../queries/use-tracking-queries";
 
 export interface DriverGpsTelemetryCardProps {
   tenantId: string;
   orderId: string;
   orderNumber: string;
+  onLocationUpdated?: (tracking: DeliveryTrackingResponse) => void;
 }
 
 function mapPositionToPayload(
@@ -73,9 +74,10 @@ export function DriverGpsTelemetryCard({
   tenantId,
   orderId,
   orderNumber,
+  onLocationUpdated,
 }: DriverGpsTelemetryCardProps) {
-  const trackingQuery = useOrderTrackingQuery(tenantId, orderId, false);
-  const sendLocationMutation = useSendDriverLocationMutation(tenantId);
+  const trackingQuery = useDriverOrderTrackingQuery(tenantId, orderId, false);
+  const sendLocationMutation = useSendDriverOrderLocationMutation(tenantId);
 
   const [isAutoTracking, setIsAutoTracking] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -88,6 +90,11 @@ export function DriverGpsTelemetryCard({
   const latestPosRef = useRef<GeolocationPosition | null>(null);
   const isSendingRef = useRef(false);
   const lastSentAtMsRef = useRef(0);
+  const onLocationUpdatedRef = useRef(onLocationUpdated);
+
+  useEffect(() => {
+    onLocationUpdatedRef.current = onLocationUpdated;
+  }, [onLocationUpdated]);
 
   const sendPayload = useCallback(
     async (payload: DriverLocationUpdateRequest) => {
@@ -102,6 +109,7 @@ export function DriverGpsTelemetryCard({
         });
         lastSentAtMsRef.current = Date.now();
         setLastPingResult(res);
+        onLocationUpdatedRef.current?.(res);
       } catch (err) {
         setApiError(getApiErrorMessage(err));
       } finally {
@@ -144,7 +152,11 @@ export function DriverGpsTelemetryCard({
   }, []);
 
   const stopAutoTracking = useCallback(() => {
-    if (watchIdRef.current !== null && typeof navigator !== "undefined" && "geolocation" in navigator) {
+    if (
+      watchIdRef.current !== null &&
+      typeof navigator !== "undefined" &&
+      "geolocation" in navigator
+    ) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
@@ -169,7 +181,10 @@ export function DriverGpsTelemetryCard({
         setGeoError(null);
         latestPosRef.current = position;
         const now = Date.now();
-        if (lastSentAtMsRef.current === 0 || now - lastSentAtMsRef.current >= 12_000) {
+        if (
+          lastSentAtMsRef.current === 0 ||
+          now - lastSentAtMsRef.current >= 12_000
+        ) {
           void sendPayload(mapPositionToPayload(position));
         }
       },

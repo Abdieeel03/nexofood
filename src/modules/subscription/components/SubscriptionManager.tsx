@@ -20,6 +20,7 @@ import {
   SUBSCRIPTION_PAYMENT_STATUS_META,
   SUBSCRIPTION_STATUS_META,
 } from "@/lib/order-state-machine";
+import { getDefaultRoleHomePath } from "@/lib/permissions";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { cleanPayload } from "@/schemas/common.schema";
 import {
@@ -182,6 +183,7 @@ export function SubscriptionManager() {
   });
 
   if (!canManageSubscription) {
+    const fallbackHref = getDefaultRoleHomePath(activeRole, systemRole);
     return (
       <div className="max-w-2xl space-y-4">
         <Alert variant="warning" title="Acceso restringido">
@@ -189,10 +191,10 @@ export function SubscriptionManager() {
           suscripción SaaS.
         </Alert>
         <Link
-          href="/dashboard"
+          href={fallbackHref}
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary"
         >
-          Volver al inicio
+          Volver a mi inicio
         </Link>
       </div>
     );

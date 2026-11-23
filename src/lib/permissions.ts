@@ -24,13 +24,46 @@ export function getEffectiveTenantRole(
 }
 
 /**
+ * Ruta inicial operativa según el rol efectivo dentro del tenant activo.
+ */
+export function getDefaultRoleHomePath(
+  staffRole?: TenantStaffRole | null,
+  systemRole?: UserSystemRole | null
+): string {
+  if (isSuperAdmin(systemRole)) return "/dashboard";
+  if (staffRole === "COCINERO") return "/orders/kds";
+  if (staffRole === "REPARTIDOR") return "/orders/deliveries";
+  return "/dashboard";
+}
+
+/**
+ * Acceso al panel ejecutivo principal (`/dashboard`).
+ * Solo `SUPERADMIN`, `OWNER` y `ADMIN`.
+ */
+export function canViewDashboard(
+  staffRole?: TenantStaffRole | null,
+  systemRole?: UserSystemRole | null
+): boolean {
+  return (
+    isSuperAdmin(systemRole) ||
+    staffRole === "OWNER" ||
+    staffRole === "ADMIN"
+  );
+}
+
+/**
  * Lecturas del catálogo en backoffice (`GET /tenants/{id}/taxes|categories|products|prices`).
+ * Solo `SUPERADMIN`, `OWNER` y `ADMIN`.
  */
 export function canViewCatalog(
   staffRole?: TenantStaffRole | null,
   systemRole?: UserSystemRole | null
 ): boolean {
-  return isStaffMember(staffRole, systemRole);
+  return (
+    isSuperAdmin(systemRole) ||
+    staffRole === "OWNER" ||
+    staffRole === "ADMIN"
+  );
 }
 
 /**
@@ -149,17 +182,22 @@ export function canViewPaymentsAudit(
 }
 
 /**
- * Consulta general de órdenes del restaurante.
+ * Consulta general de órdenes del restaurante (`GET /tenants/{id}/orders`).
+ * Solo `SUPERADMIN`, `OWNER` y `ADMIN`.
  */
 export function canViewOrders(
   staffRole?: TenantStaffRole | null,
   systemRole?: UserSystemRole | null
 ): boolean {
-  return isStaffMember(staffRole, systemRole);
+  return (
+    isSuperAdmin(systemRole) ||
+    staffRole === "OWNER" ||
+    staffRole === "ADMIN"
+  );
 }
 
 /**
- * Cola de cocina (KDS) `GET /tenants/{id}/orders/kds`.
+ * Cola de cocina (KDS) `GET /tenants/{id}/kitchen/orders`.
  */
 export function canViewKds(
   staffRole?: TenantStaffRole | null,
@@ -174,7 +212,7 @@ export function canViewKds(
 }
 
 /**
- * Vista de entregas asignadas `GET /tenants/{id}/orders/my-deliveries`.
+ * Vista de entregas asignadas `GET /tenants/{id}/driver/orders`.
  */
 export function canViewDeliveries(
   staffRole?: TenantStaffRole | null,
@@ -217,7 +255,7 @@ export function canAssignDriver(
 }
 
 /**
- * Envío de pings GPS del repartidor `PUT /tenants/{id}/orders/{id}/tracking/location`.
+ * Envío de pings GPS del repartidor `PUT /tenants/{id}/driver/orders/{id}/location`.
  */
 export function canSendDriverLocation(
   staffRole?: TenantStaffRole | null,

@@ -136,37 +136,6 @@ export async function assignOrderDriver(
 }
 
 /**
- * Cola de cocina KDS en estado `EN_PREPARACION` ordenada FIFO (`GET /tenants/{tenantId}/orders/kds`).
- */
-export async function fetchKdsOrders(
-  tenantId: string,
-  signal?: AbortSignal
-): Promise<OrderResponse[]> {
-  return apiClient.get<OrderResponse[]>(`/tenants/${tenantId}/orders/kds`, {
-    schema: z.array(orderResponseSchema),
-    signal,
-  });
-}
-
-/**
- * Entregas asignadas al repartidor autenticado (`GET /tenants/{tenantId}/orders/my-deliveries`).
- */
-export async function fetchMyDeliveries(
-  tenantId: string,
-  status?: OrderStatus,
-  signal?: AbortSignal
-): Promise<OrderResponse[]> {
-  return apiClient.get<OrderResponse[]>(
-    `/tenants/${tenantId}/orders/my-deliveries`,
-    {
-      params: status ? { status } : undefined,
-      schema: z.array(orderResponseSchema),
-      signal,
-    }
-  );
-}
-
-/**
  * Lista de repartidores activos del restaurante (`GET /tenants/{tenantId}/members`).
  */
 export async function fetchActiveDrivers(

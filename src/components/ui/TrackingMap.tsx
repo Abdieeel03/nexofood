@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type * as LeafletTypes from "leaflet";
 import type { TrackingPointResponse } from "@/schemas/tracking.schema";
 import { Icon } from "./Icon";
@@ -88,6 +88,7 @@ export const TrackingMap: React.FC<TrackingMapProps> = ({
   const mapRef = useRef<LeafletTypes.Map | null>(null);
   const layerGroupRef = useRef<LeafletTypes.LayerGroup | null>(null);
   const hasFittedRef = useRef(false);
+  const [mapReady, setMapReady] = useState(0);
 
   const hasStore = isValidCoord(storeLatitude, storeLongitude);
   const hasDestination = isValidCoord(destinationLatitude, destinationLongitude);
@@ -138,6 +139,7 @@ export const TrackingMap: React.FC<TrackingMapProps> = ({
       const group = L.layerGroup().addTo(map);
       mapRef.current = map;
       layerGroupRef.current = group;
+      setMapReady((n) => n + 1);
 
       setTimeout(() => {
         map.invalidateSize();
@@ -149,6 +151,7 @@ export const TrackingMap: React.FC<TrackingMapProps> = ({
       mapRef.current?.remove();
       mapRef.current = null;
       layerGroupRef.current = null;
+      leafletRef.current = null;
       hasFittedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -256,6 +259,7 @@ export const TrackingMap: React.FC<TrackingMapProps> = ({
     heading,
     routeHistory,
     stale,
+    mapReady,
   ]);
 
   const handleRecenter = () => {

@@ -2,7 +2,11 @@
 
 import React, { useId, useRef, useState } from "react";
 import { Alert, Button, Icon } from "@/components/ui";
-import { canManageCatalog, canViewCatalog } from "@/lib/permissions";
+import {
+  canManageCatalog,
+  canViewCatalog,
+  getDefaultRoleHomePath,
+} from "@/lib/permissions";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { CategoriesTab } from "./CategoriesTab";
 import { ProductsTab } from "./ProductsTab";
@@ -133,6 +137,7 @@ export const CatalogManager: React.FC = () => {
   }
 
   if (!canViewCatalog(activeRole, systemRole)) {
+    const fallbackHref = getDefaultRoleHomePath(activeRole, systemRole);
     return (
       <div className="space-y-6">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-on-surface">
@@ -142,13 +147,13 @@ export const CatalogManager: React.FC = () => {
           variant="danger"
           title="Acceso restringido"
           action={
-            <Button href="/dashboard" variant="outline" size="sm">
-              Volver al inicio
+            <Button href={fallbackHref} variant="outline" size="sm">
+              Volver a mi inicio
             </Button>
           }
         >
-          No cuentas con permisos de personal activo para consultar el catálogo
-          de este restaurante.
+          La consulta y administración del catálogo está restringida a
+          propietarios y administradores de este restaurante.
         </Alert>
       </div>
     );

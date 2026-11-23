@@ -3,7 +3,7 @@
 import React, { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { ImageUploadField } from "@/components/ui/ImageUploadField";
 import { MapPicker } from "@/components/ui/MapPicker";
 import {
   apiClient,
@@ -781,36 +782,42 @@ export function OnboardingFlow() {
               </div>
 
               <div>
-                <label
-                  htmlFor={`${baseId}-logo`}
-                  className="block text-sm font-semibold text-on-surface mb-1.5"
-                >
-                  URL del logotipo
-                </label>
-                <input
-                  id={`${baseId}-logo`}
-                  type="url"
-                  maxLength={500}
-                  placeholder="https://..."
-                  {...tenantForm.register("logoUrl")}
-                  className={inputClass}
+                <Controller
+                  control={tenantForm.control}
+                  name="logoUrl"
+                  render={({ field, fieldState }) => (
+                    <ImageUploadField
+                      id={`${baseId}-logo`}
+                      label="Logotipo del local"
+                      helperText="PNG, JPG, WebP o SVG (máx. 5 MB)."
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      error={fieldState.error?.message}
+                      target="TENANT_LOGO"
+                      previewVariant="square"
+                    />
+                  )}
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor={`${baseId}-banner`}
-                  className="block text-sm font-semibold text-on-surface mb-1.5"
-                >
-                  URL del banner
-                </label>
-                <input
-                  id={`${baseId}-banner`}
-                  type="url"
-                  maxLength={500}
-                  placeholder="https://..."
-                  {...tenantForm.register("bannerUrl")}
-                  className={inputClass}
+                <Controller
+                  control={tenantForm.control}
+                  name="bannerUrl"
+                  render={({ field, fieldState }) => (
+                    <ImageUploadField
+                      id={`${baseId}-banner`}
+                      label="Banner del local"
+                      helperText="PNG, JPG, WebP o SVG (máx. 5 MB)."
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      error={fieldState.error?.message}
+                      target="TENANT_BANNER"
+                      previewVariant="banner"
+                    />
+                  )}
                 />
               </div>
 

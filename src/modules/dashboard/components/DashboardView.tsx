@@ -24,20 +24,25 @@ import {
 import {
   canManageSettings,
   canViewCatalog,
+  canViewDashboard,
   canViewDeliveries,
   canViewKds,
   canViewLiveTracking,
   canViewOrders,
   canViewPaymentsAudit,
+  getDefaultRoleHomePath,
 } from "@/lib/permissions";
 import { KpiCard } from "@/modules/app/components/KpiCard";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { PendingInvitationsBanner } from "@/modules/notifications";
+import { ordersKeys } from "@/modules/orders/queries/keys";
+import { fetchKitchenOrders } from "@/modules/orders/services/kitchen.service";
 import { userResponseSchema, type UserResponse } from "@/schemas/auth.schema";
 import {
   pageResponseSchema,
   type PageResponse,
 } from "@/schemas/common.schema";
+import type { KitchenOrderResponse } from "@/schemas/kitchen.schema";
 import { orderResponseSchema, type OrderResponse } from "@/schemas/order.schema";
 import {
   mercadoPagoStatusResponseSchema,
@@ -71,27 +76,46 @@ export function DashboardView() {
     !activeTenant &&
     user.staffMemberships.length === 0;
 
+  const canView = canViewDashboard(activeRole, systemRole);
+  const roleHomePath = getDefaultRoleHomePath(activeRole, systemRole);
+  const shouldRedirectToRoleHome = Boolean(
+    activeTenant && !canView && roleHomePath !== "/dashboard"
+  );
+
   useEffect(() => {
     if (shouldRedirectToOnboarding) {
       router.replace("/onboarding");
+      return;
     }
-  }, [shouldRedirectToOnboarding, router]);
+    if (shouldRedirectToRoleHome) {
+      router.replace(roleHomePath);
+    }
+  }, [
+    shouldRedirectToOnboarding,
+    shouldRedirectToRoleHome,
+    roleHomePath,
+    router,
+  ]);
 
   const tenantId = activeTenant?.id ?? "";
   const hasTenant = Boolean(activeTenant);
 
-  const allowOrders = hasTenant && canViewOrders(activeRole, systemRole);
-  const allowKds = hasTenant && canViewKds(activeRole, systemRole);
-  const allowDeliveries = hasTenant && canViewDeliveries(activeRole, systemRole);
+  const allowOrders =
+    hasTenant && canView && canViewOrders(activeRole, systemRole);
+  const allowKds = hasTenant && canView && canViewKds(activeRole, systemRole);
+  const allowDeliveries =
+    hasTenant && canView && canViewDeliveries(activeRole, systemRole);
   const allowTracking =
-    hasTenant && canViewLiveTracking(activeRole, systemRole);
+    hasTenant && canView && canViewLiveTracking(activeRole, systemRole);
   const allowPaymentsAudit =
-    hasTenant && canViewPaymentsAudit(activeRole, systemRole);
+    hasTenant && canView && canViewPaymentsAudit(activeRole, systemRole);
   const allowManageSettings =
-    hasTenant && canManageSettings(activeRole, systemRole);
-  const allowCatalog = hasTenant && canViewCatalog(activeRole, systemRole);
+    hasTenant && canView && canManageSettings(activeRole, systemRole);
+  const allowCatalog =
+    hasTenant && canView && canViewCatalog(activeRole, systemRole);
   const isOwner =
     hasTenant &&
+    canView &&
     (activeRole === "OWNER" || activeTenant?.ownerId === user.id);
 
   // Consultas operativas del restaurante activo
@@ -108,13 +132,10 @@ export function DashboardView() {
     enabled: allowOrders,
   });
 
-  const kdsQuery = useQuery({
-    queryKey: ["dashboard", tenantId, "kds"],
-    queryFn: () =>
-      apiClient.get<OrderResponse[]>(
-        `/tenants/${encodeURIComponent(tenantId)}/orders/kds`,
-        { schema: z.array(orderResponseSchema) }
-      ),
+  const kdsQuery = useQuery<KitchenOrderResponse[]>({
+    queryKey: ordersKeys.kitchen(tenantId, "EN_PREPARACION"),
+    queryFn: ({ signal }) =>
+      fetchKitchenOrders(tenantId, "EN_PREPARACION", signal),
     enabled: allowKds,
   });
 
@@ -190,6 +211,29 @@ export function DashboardView() {
           Redirigiendo a la configuración inicial de tu restaurante...
         </p>
       </div>
+    );
+  }
+
+  if (shouldRedirectToRoleHome) {
+    return (
+      <div className="max-w-lg mx-auto py-12 text-center space-y-3" aria-busy="true">
+        <span
+          className="inline-block h-7 w-7 rounded-full border-3 border-primary border-t-transparent animate-spin"
+          aria-hidden="true"
+        />
+        <p className="text-sm font-semibold text-on-surface-variant">
+          Redirigiendo a tu espacio operativo...
+        </p>
+      </div>
+    );
+  }
+
+  if (activeTenant && !canView) {
+    return (
+      <Alert variant="danger" title="Acceso restringido">
+        El panel ejecutivo principal está restringido a propietarios y
+        administradores de <strong>{activeTenant.name}</strong>.
+      </Alert>
     );
   }
 
@@ -607,20 +651,22 @@ export function DashboardView() {
 
       {/* Accesos rápidos por rol */}
       <section aria-label="Accesos rápidos" className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Link
-          href="/orders"
-          className="rounded-2xl border border-outline-variant/60 bg-surface-card p-4 hover:border-primary transition-colors flex items-center gap-3 shadow-level-1"
-        >
-          <div className="w-10 h-10 rounded-xl bg-mint-subtle text-primary flex items-center justify-center shrink-0">
-            <Icon name="receipt_long" size={20} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-on-surface truncate">Pedidos</p>
-            <p className="text-xs text-on-surface-variant truncate">
-              Tablero y estados
-            </p>
-          </div>
-        </Link>
+        {allowOrders && (
+          <Link
+            href="/orders"
+            className="rounded-2xl border border-outline-variant/60 bg-surface-card p-4 hover:border-primary transition-colors flex items-center gap-3 shadow-level-1"
+          >
+            <div className="w-10 h-10 rounded-xl bg-mint-subtle text-primary flex items-center justify-center shrink-0">
+              <Icon name="receipt_long" size={20} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-on-surface truncate">Pedidos</p>
+              <p className="text-xs text-on-surface-variant truncate">
+                Tablero y estados
+              </p>
+            </div>
+          </Link>
+        )}
 
         {allowKds && (
           <Link
@@ -710,13 +756,15 @@ export function DashboardView() {
               Últimos movimientos registrados en {activeTenant.name}.
             </p>
           </div>
-          <Link
-            href="/orders"
-            className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
-          >
-            <span>Ver todos los pedidos</span>
-            <Icon name="arrow_forward" size={16} />
-          </Link>
+          {allowOrders && (
+            <Link
+              href="/orders"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+            >
+              <span>Ver todos los pedidos</span>
+              <Icon name="arrow_forward" size={16} />
+            </Link>
+          )}
         </div>
 
         {ordersQuery.isError ? (

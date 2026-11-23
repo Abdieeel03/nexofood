@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { loginAction } from "@/lib/auth-actions";
 import { isSafeInternalRedirect } from "@/lib/auth-constants";
+import { getDefaultRoleHomePath } from "@/lib/permissions";
 import { storeKeys } from "@/modules/store/queries/keys";
 import { loginRequestSchema, type LoginRequest } from "@/schemas/auth.schema";
 
@@ -74,6 +75,11 @@ export function LoginForm({
         result.staffMemberships.length === 0
       ) {
         target = "/onboarding";
+      } else if (result.staffMemberships.length === 1) {
+        target = getDefaultRoleHomePath(
+          result.staffMemberships[0].staffRole,
+          result.user.systemRole
+        );
       }
 
       router.push(target);

@@ -1,20 +1,25 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { OrderStatus, PageResponse } from "@/schemas/common.schema";
+import type { PageResponse } from "@/schemas/common.schema";
+import type { DriverOrderResponse, DriverOrderStatus } from "@/schemas/driver.schema";
+import type {
+  KitchenOrderQueryStatus,
+  KitchenOrderResponse,
+} from "@/schemas/kitchen.schema";
 import type { OrderResponse } from "@/schemas/order.schema";
 import type { PaymentResponse } from "@/schemas/payment.schema";
 import type { TenantMemberResponse } from "@/schemas/tenant.schema";
-import { ordersKeys } from "./keys";
+import { fetchDriverOrders } from "../services/driver.service";
+import { fetchKitchenOrders } from "../services/kitchen.service";
 import {
   fetchActiveDrivers,
-  fetchKdsOrders,
-  fetchMyDeliveries,
   fetchOrderById,
   fetchOrderPayment,
   fetchOrders,
   type OrdersListParams,
 } from "../services/orders.service";
+import { ordersKeys } from "./keys";
 
 export function useOrdersQuery(
   tenantId: string | undefined,
@@ -56,27 +61,28 @@ export function useOrderPaymentQuery(
   });
 }
 
-export function useKdsOrdersQuery(
+export function useKitchenOrdersQuery(
   tenantId: string | undefined,
+  status?: KitchenOrderQueryStatus,
   enabled = true
 ) {
-  return useQuery<OrderResponse[], Error>({
-    queryKey: ordersKeys.kds(tenantId ?? ""),
-    queryFn: ({ signal }) => fetchKdsOrders(tenantId!, signal),
+  return useQuery<KitchenOrderResponse[], Error>({
+    queryKey: ordersKeys.kitchen(tenantId ?? "", status),
+    queryFn: ({ signal }) => fetchKitchenOrders(tenantId!, status, signal),
     enabled: Boolean(tenantId) && enabled,
     staleTime: 10_000,
     refetchInterval: 15_000,
   });
 }
 
-export function useMyDeliveriesQuery(
+export function useDriverOrdersQuery(
   tenantId: string | undefined,
-  status?: OrderStatus,
+  status?: DriverOrderStatus,
   enabled = true
 ) {
-  return useQuery<OrderResponse[], Error>({
-    queryKey: ordersKeys.myDeliveries(tenantId ?? "", status),
-    queryFn: ({ signal }) => fetchMyDeliveries(tenantId!, status, signal),
+  return useQuery<DriverOrderResponse[], Error>({
+    queryKey: ordersKeys.driverOrders(tenantId ?? "", status),
+    queryFn: ({ signal }) => fetchDriverOrders(tenantId!, status, signal),
     enabled: Boolean(tenantId) && enabled,
     staleTime: 10_000,
     refetchInterval: 15_000,

@@ -1,4 +1,5 @@
-import type { OrderStatus } from "@/schemas/common.schema";
+import type { DriverOrderStatus } from "@/schemas/driver.schema";
+import type { KitchenOrderQueryStatus } from "@/schemas/kitchen.schema";
 import type { OrdersListParams } from "../services/orders.service";
 
 export const ordersKeys = {
@@ -13,11 +14,14 @@ export const ordersKeys = {
     [...ordersKeys.details(tenantId), orderId] as const,
   payment: (tenantId: string, orderId: string) =>
     [...ordersKeys.tenant(tenantId), "payment", orderId] as const,
-  kds: (tenantId: string) => [...ordersKeys.tenant(tenantId), "kds"] as const,
-  deliveriesRoot: (tenantId: string) =>
-    [...ordersKeys.tenant(tenantId), "my-deliveries"] as const,
-  myDeliveries: (tenantId: string, status?: OrderStatus) =>
-    [...ordersKeys.deliveriesRoot(tenantId), status ?? "ALL"] as const,
+  kitchenRoot: (tenantId: string) =>
+    [...ordersKeys.tenant(tenantId), "kitchen"] as const,
+  kitchen: (tenantId: string, status?: KitchenOrderQueryStatus) =>
+    [...ordersKeys.kitchenRoot(tenantId), status ?? "ALL"] as const,
+  driverRoot: (tenantId: string) =>
+    [...ordersKeys.tenant(tenantId), "driver"] as const,
+  driverOrders: (tenantId: string, status?: DriverOrderStatus) =>
+    [...ordersKeys.driverRoot(tenantId), status ?? "ALL"] as const,
   drivers: (tenantId: string) =>
     [...ordersKeys.tenant(tenantId), "drivers"] as const,
 };

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useId, useState } from "react";
 import Link from "next/link";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Alert } from "@/components/ui/Alert";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
+import { ImageUploadField } from "@/components/ui/ImageUploadField";
 import { MapPicker } from "@/components/ui/MapPicker";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import {
@@ -17,7 +18,11 @@ import {
   formatScheduleRange,
   toApiLocalTime,
 } from "@/lib/format";
-import { canManageSettings, canViewPaymentsAudit } from "@/lib/permissions";
+import {
+  canManageSettings,
+  canViewPaymentsAudit,
+  getDefaultRoleHomePath,
+} from "@/lib/permissions";
 import { EmptyState } from "@/modules/app/components/EmptyState";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { cleanPayload } from "@/schemas/common.schema";
@@ -221,16 +226,17 @@ export function GeneralSettingsView() {
   }
 
   if (!canEdit && !canViewPayments) {
+    const fallbackHref = getDefaultRoleHomePath(activeRole, systemRole);
     return (
       <div className="max-w-2xl space-y-4">
         <Alert variant="warning" title="Sin permisos de configuración">
           Tu rol actual no tiene acceso a la configuración del restaurante.
         </Alert>
         <Link
-          href="/dashboard"
+          href={fallbackHref}
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary"
         >
-          Volver al inicio
+          Volver a mi inicio
         </Link>
       </div>
     );
@@ -487,36 +493,46 @@ export function GeneralSettingsView() {
             </div>
 
             <div>
-              <label
-                htmlFor={`${baseId}-logo`}
-                className="block text-sm font-semibold text-on-surface mb-1.5"
-              >
-                URL del logotipo
-              </label>
-              <input
-                id={`${baseId}-logo`}
-                type="url"
-                maxLength={500}
-                disabled={!canEdit}
-                {...form.register("logoUrl")}
-                className={inputClass}
+              <Controller
+                control={form.control}
+                name="logoUrl"
+                render={({ field, fieldState }) => (
+                  <ImageUploadField
+                    id={`${baseId}-logo`}
+                    label="Logotipo del local"
+                    helperText="PNG, JPG, WebP o SVG (máx. 5 MB)."
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={fieldState.error?.message}
+                    disabled={!canEdit}
+                    target="TENANT_LOGO"
+                    tenantId={activeTenant.id}
+                    previewVariant="square"
+                  />
+                )}
               />
             </div>
 
             <div>
-              <label
-                htmlFor={`${baseId}-banner`}
-                className="block text-sm font-semibold text-on-surface mb-1.5"
-              >
-                URL del banner
-              </label>
-              <input
-                id={`${baseId}-banner`}
-                type="url"
-                maxLength={500}
-                disabled={!canEdit}
-                {...form.register("bannerUrl")}
-                className={inputClass}
+              <Controller
+                control={form.control}
+                name="bannerUrl"
+                render={({ field, fieldState }) => (
+                  <ImageUploadField
+                    id={`${baseId}-banner`}
+                    label="Banner del local"
+                    helperText="PNG, JPG, WebP o SVG (máx. 5 MB)."
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={fieldState.error?.message}
+                    disabled={!canEdit}
+                    target="TENANT_BANNER"
+                    tenantId={activeTenant.id}
+                    previewVariant="banner"
+                  />
+                )}
               />
             </div>
 

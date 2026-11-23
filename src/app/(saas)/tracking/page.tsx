@@ -4,7 +4,7 @@ import React, { Suspense } from "react";
 import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Icon } from "@/components/ui/Icon";
-import { canViewLiveTracking } from "@/lib/permissions";
+import { canViewLiveTracking, getDefaultRoleHomePath } from "@/lib/permissions";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { LiveFleetTrackingView } from "@/modules/tracking/components/LiveFleetTrackingView";
 
@@ -42,16 +42,17 @@ export default function LiveTrackingPage() {
   }
 
   if (!canViewLiveTracking(activeRole, systemRole)) {
+    const fallbackHref = getDefaultRoleHomePath(activeRole, systemRole);
     return (
       <Alert
         variant="danger"
         title="Acceso restringido"
         action={
           <Link
-            href="/orders"
+            href={fallbackHref}
             className="inline-flex items-center gap-1.5 text-xs font-bold underline"
           >
-            Volver a Pedidos
+            Volver a mi inicio
           </Link>
         }
       >

@@ -15,11 +15,13 @@ import {
   canManageMembers,
   canManageSettings,
   canViewCatalog,
+  canViewDashboard,
   canViewDeliveries,
   canViewKds,
   canViewLiveTracking,
   canViewOrders,
   canViewPaymentsAudit,
+  getDefaultRoleHomePath,
 } from "@/lib/permissions";
 import { useSessionTenant } from "./SessionTenantProvider";
 
@@ -339,12 +341,14 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
 
   const tenantNavItems: NavItem[] = [];
   if (activeTenant) {
-    tenantNavItems.push({
-      label: "Inicio",
-      href: "/dashboard",
-      icon: "dashboard",
-      exact: true,
-    });
+    if (canViewDashboard(activeRole, systemRole)) {
+      tenantNavItems.push({
+        label: "Inicio",
+        href: "/dashboard",
+        icon: "dashboard",
+        exact: true,
+      });
+    }
 
     if (canViewOrders(activeRole, systemRole)) {
       tenantNavItems.push({
@@ -480,13 +484,19 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
     pathname === "/dashboard/settings" ||
     pathname?.startsWith("/dashboard/settings/");
 
+  const logoHomeHref = activeTenant
+    ? getDefaultRoleHomePath(activeRole, systemRole)
+    : systemRole === "SUPERADMIN"
+      ? "/superadmin"
+      : "/onboarding";
+
   return (
     <aside className="h-full flex flex-col justify-between w-64 bg-surface-card border-r border-outline-variant/60">
       {/* Top Header */}
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="p-4 border-b border-outline-variant/50 flex items-center justify-between gap-2">
           <Link
-            href={activeTenant ? "/dashboard" : systemRole === "SUPERADMIN" ? "/superadmin" : "/onboarding"}
+            href={logoHomeHref}
             onClick={onCloseMobile}
             className="flex items-center gap-2.5 min-w-0 group"
           >

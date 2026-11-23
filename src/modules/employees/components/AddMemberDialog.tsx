@@ -51,9 +51,9 @@ export function AddMemberDialog({
   onSuccessMessage,
 }: AddMemberDialogProps) {
   const formId = useId();
-  const userIdInputId = useId();
-  const userIdHintId = useId();
-  const userIdErrorId = useId();
+  const emailInputId = useId();
+  const emailHintId = useId();
+  const emailErrorId = useId();
 
   const assignableRoles = useMemo(
     () =>
@@ -78,7 +78,7 @@ export function AddMemberDialog({
     resolver: zodResolver(tenantMemberRequestSchema),
     mode: "onTouched",
     defaultValues: {
-      userId: "",
+      email: "",
       role: defaultRole,
     },
   });
@@ -86,18 +86,18 @@ export function AddMemberDialog({
   useEffect(() => {
     if (open) {
       addMutation.reset();
-      reset({ userId: "", role: defaultRole });
+      reset({ email: "", role: defaultRole });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultRole, reset]);
 
   const onSubmit = (values: TenantMemberRequest) => {
     addMutation.mutate(
-      { userId: values.userId.trim(), role: values.role },
+      { email: values.email.trim(), role: values.role },
       {
         onSuccess: (created) => {
           onSuccessMessage(
-            `${created.userFullName} fue vinculado como ${TENANT_STAFF_ROLE_META[created.role].label}.`
+            `Invitación enviada a ${created.userFullName} (${created.userEmail}) con el rol de ${TENANT_STAFF_ROLE_META[created.role].label}. Quedará activo cuando acepte la invitación.`
           );
           onClose();
         },
@@ -111,8 +111,8 @@ export function AddMemberDialog({
       onClose={onClose}
       closedby={addMutation.isPending ? "none" : "closerequest"}
       size="md"
-      title="Vincular miembro al equipo"
-      description="Asocia una cuenta NexoFood existente como colaborador del restaurante."
+      title="Invitar colaborador por correo"
+      description="Envía una invitación a un usuario registrado en NexoFood para unirse al equipo del restaurante."
       footer={
         <>
           <Button
@@ -131,10 +131,10 @@ export function AddMemberDialog({
             size="sm"
             isLoading={addMutation.isPending}
             disabled={assignableRoles.length === 0}
-            icon="person_add"
+            icon="send"
             iconPosition="left"
           >
-            Vincular colaborador
+            Enviar invitación
           </Button>
         </>
       }
@@ -145,68 +145,70 @@ export function AddMemberDialog({
         noValidate
         className="space-y-5"
       >
-        <Alert variant="info" title="¿Cómo obtener el userId?">
-          Esta operación vincula una cuenta NexoFood ya registrada mediante su{" "}
-          <strong>userId (UUID de 36 caracteres)</strong>. El usuario puede
-          copiar su identificador desde su perfil en <em>Mi Cuenta</em> (o un
-          Superadmin desde <em>Usuarios</em>).
+        <Alert variant="info" title="Flujo de invitación por correo">
+          Ingresa el <strong>correo electrónico</strong> de un usuario ya
+          registrado en NexoFood. Se creará una invitación en estado{" "}
+          <code>PENDING</code> y el usuario recibirá una notificación{" "}
+          <code>STAFF_INVITATION</code> para aceptarla o rechazarla.
         </Alert>
 
         {addMutation.isError && (
-          <Alert variant="danger" title="No se pudo vincular al miembro">
+          <Alert variant="danger" title="No se pudo enviar la invitación">
             {getApiErrorMessage(addMutation.error)}
           </Alert>
         )}
 
         <div className="flex flex-col gap-1.5">
           <label
-            htmlFor={userIdInputId}
+            htmlFor={emailInputId}
             className="text-sm font-bold text-on-surface"
           >
-            ID de usuario (UUID) <span aria-hidden="true">*</span>
+            Correo electrónico del usuario <span aria-hidden="true">*</span>
           </label>
           <input
-            id={userIdInputId}
-            type="text"
+            id={emailInputId}
+            type="email"
             autoFocus
             required
+            autoComplete="email"
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="none"
-            placeholder="4fa85f64-5717-4562-b3fc-2c963f66afa7"
-            aria-invalid={Boolean(errors.userId) || undefined}
+            placeholder="ana@ejemplo.com"
+            aria-invalid={Boolean(errors.email) || undefined}
             aria-describedby={
-              errors.userId
-                ? `${userIdHintId} ${userIdErrorId}`
-                : userIdHintId
+              errors.email
+                ? `${emailHintId} ${emailErrorId}`
+                : emailHintId
             }
-            {...register("userId")}
-            className={`h-11 rounded-xl border bg-surface-container-low px-3.5 font-mono text-sm text-on-surface ${
-              errors.userId ? "border-error" : "border-outline-variant"
+            {...register("email")}
+            className={`h-11 rounded-xl border bg-surface-container-low px-3.5 text-sm text-on-surface ${
+              errors.email ? "border-error" : "border-outline-variant"
             }`}
           />
-          <p id={userIdHintId} className="text-xs text-on-surface-variant">
-            Formato UUID estándar (ej. 3fa85f64-5717-4562-b3fc-2c963f66afa6).
+          <p id={emailHintId} className="text-xs text-on-surface-variant">
+            Cualquier correo válido con el que el colaborador haya creado su
+            cuenta en NexoFood.
           </p>
-          {errors.userId && (
+          {errors.email && (
             <p
-              id={userIdErrorId}
+              id={emailErrorId}
               role="alert"
               className="text-xs font-semibold text-error"
             >
-              {errors.userId.message}
+              {errors.email.message}
             </p>
           )}
         </div>
 
         <fieldset className="space-y-2.5">
           <legend className="text-sm font-bold text-on-surface">
-            Rol operativo asignado <span aria-hidden="true">*</span>
+            Rol operativo ofrecido <span aria-hidden="true">*</span>
           </legend>
 
           {assignableRoles.length === 0 ? (
             <Alert variant="warning">
-              Tu rol actual no tiene permisos para asignar roles en este
+              Tu rol actual no tiene permisos para invitar colaboradores en este
               restaurante.
             </Alert>
           ) : (

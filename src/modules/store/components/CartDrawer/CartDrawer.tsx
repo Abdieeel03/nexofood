@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatCurrencyPEN } from "@/lib/format";
+import { formatCurrencyPEN, formatScheduleRange } from "@/lib/format";
 import type { CartItemResponse } from "@/schemas/cart.schema";
 import { useStoreUi } from "@/stores/store-ui.store";
 import { useActiveStoreSlug } from "../../hooks/use-active-store-slug";
@@ -242,7 +242,14 @@ const CartDrawerBody: React.FC<CartDrawerBodyProps> = ({
     );
   }
 
-  const isStoreClosed = tenant ? !tenant.isActive : false;
+  const isEffectiveOpen =
+    (tenant ? tenant.isActive : true) &&
+    (menu?.isOpen ?? tenant?.isOpen ?? true) !== false;
+  const isStoreClosed = !isEffectiveOpen;
+  const scheduleText = formatScheduleRange(
+    menu?.openingTime ?? tenant?.openingTime,
+    menu?.closingTime ?? tenant?.closingTime
+  );
   const onlinePaymentsDisabled =
     menu !== undefined
       ? !menu.onlinePaymentsEnabled
@@ -298,7 +305,9 @@ const CartDrawerBody: React.FC<CartDrawerBodyProps> = ({
 
         {isStoreClosed && (
           <Alert variant="danger">
-            Este restaurante no está recibiendo pedidos en este momento.
+            {scheduleText
+              ? `El restaurante se encuentra cerrado en este momento (Horario: ${scheduleText}).`
+              : "Este restaurante se encuentra cerrado y no está recibiendo pedidos en este momento."}
           </Alert>
         )}
 

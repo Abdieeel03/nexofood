@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
+import { formatScheduleRange } from "@/lib/format";
 import type { TenantResponse } from "@/schemas/tenant.schema";
 
 export interface WelcomeBannerProps {
@@ -10,6 +11,12 @@ export interface WelcomeBannerProps {
 }
 
 export function WelcomeBanner({ tenant, mpConnected }: WelcomeBannerProps) {
+  const scheduleLabel = formatScheduleRange(
+    tenant.openingTime,
+    tenant.closingTime
+  );
+  const isEffectivelyOpen = tenant.isActive && tenant.isOpen !== false;
+
   return (
     <section className="relative overflow-hidden rounded-3xl bg-linear-to-r from-primary to-on-primary-fixed-variant text-on-primary p-6 md:p-8 shadow-level-1">
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -22,6 +29,18 @@ export function WelcomeBanner({ tenant, mpConnected }: WelcomeBannerProps) {
             >
               {tenant.isActive ? "Storefront activo" : "Storefront pausado"}
             </Badge>
+            <Badge
+              variant={isEffectivelyOpen ? "success" : "danger"}
+              dot
+              size="sm"
+            >
+              {isEffectivelyOpen ? "Abierto ahora" : "Cerrado ahora"}
+            </Badge>
+            {scheduleLabel && (
+              <Badge variant="info" size="sm">
+                Horario: {scheduleLabel}
+              </Badge>
+            )}
             <Badge
               variant={mpConnected ? "primary" : "warning"}
               size="sm"

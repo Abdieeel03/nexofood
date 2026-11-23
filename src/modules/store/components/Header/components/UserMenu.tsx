@@ -96,7 +96,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             )}
 
             <Link
-              href="/store/account"
+              href={
+                activeSlug
+                  ? `/store/${encodeURIComponent(activeSlug)}/account`
+                  : "/store/account"
+              }
               role="menuitem"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold text-on-surface hover:bg-mint-subtle hover:text-primary transition-colors"

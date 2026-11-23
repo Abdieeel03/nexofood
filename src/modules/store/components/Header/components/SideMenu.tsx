@@ -150,7 +150,11 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             {user && (
               <li>
                 <Link
-                  href="/store/account"
+                  href={
+                    activeSlug
+                      ? `/store/${encodeURIComponent(activeSlug)}/account`
+                      : "/store/account"
+                  }
                   onClick={onClose}
                   className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-on-surface hover:bg-mint-subtle hover:text-primary transition-colors"
                 >

@@ -103,7 +103,9 @@ const ProductDetailContent: React.FC<ProductDetailContentProps> = ({
 
   if (!product) return null;
 
-  const tenantClosed = tenant ? !tenant.isActive : false;
+  const tenantClosed = tenant
+    ? !tenant.isActive || tenant.isOpen === false
+    : false;
   const outOfStock = product.stock === 0 || !product.isAvailable;
   const effectiveQuantity =
     product.stock > 0 ? Math.min(Math.max(1, quantity), product.stock) : 1;

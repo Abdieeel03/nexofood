@@ -33,6 +33,7 @@ import {
   type UserUpdateRequest,
 } from "@/schemas/auth.schema";
 import { cleanPayload } from "@/schemas/common.schema";
+import { NotificationsCenterView } from "@/modules/notifications";
 
 export interface AccountManagerProps {
   context?: "saas" | "store";
@@ -40,7 +41,7 @@ export interface AccountManagerProps {
   onProfileUpdated?: () => Promise<void> | void;
 }
 
-type AccountTab = "profile" | "security" | "addresses";
+type AccountTab = "profile" | "security" | "addresses" | "notifications";
 
 const DEFAULT_LIMA_COORDS = { latitude: -12.046374, longitude: -77.042793 };
 
@@ -60,6 +61,7 @@ export function AccountManager({
     profile: null,
     security: null,
     addresses: null,
+    notifications: null,
   });
 
   const [profileFeedback, setProfileFeedback] = useState<{
@@ -341,6 +343,11 @@ export function AccountManager({
     { id: "profile", label: "Perfil", icon: "person" },
     { id: "security", label: "Seguridad", icon: "lock" },
     { id: "addresses", label: "Libreta de direcciones", icon: "location_on" },
+    {
+      id: "notifications",
+      label: "Notificaciones e invitaciones",
+      icon: "notifications",
+    },
   ];
 
   const handleTabKeyDown = (
@@ -396,7 +403,11 @@ export function AccountManager({
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <Link
-              href={`/?callbackUrl=${encodeURIComponent("/store/account")}`}
+              href={`/?callbackUrl=${encodeURIComponent(
+                slug
+                  ? `/store/${encodeURIComponent(slug)}/account`
+                  : "/store/account"
+              )}`}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-secondary-container px-5 py-2.5 text-sm font-semibold text-on-secondary shadow-xs hover:bg-secondary-accent transition-colors"
             >
               <span>Iniciar sesión</span>
@@ -1002,6 +1013,24 @@ export function AccountManager({
             </ul>
           )}
         </div>
+      </div>
+
+      {/* Panel 4: Notificaciones e invitaciones */}
+      <div
+        role="tabpanel"
+        id={`${baseId}-panel-notifications`}
+        aria-labelledby={`${baseId}-tab-notifications`}
+        hidden={activeTab !== "notifications"}
+      >
+        {activeTab === "notifications" && (
+          <NotificationsCenterView
+            embedded
+            onMembershipChanged={async () => {
+              await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+              await onProfileUpdated?.();
+            }}
+          />
+        )}
       </div>
 
       {/* Diálogo Crear / Editar Dirección */}

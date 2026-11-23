@@ -1,12 +1,5 @@
-import React from "react";
-import type { Metadata } from "next";
-import { AdminUsersView } from "@/modules/admin/components/AdminUsersView";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Usuarios globales",
-  description: "Administración de usuarios de la plataforma NexoFood.",
-};
-
-export default function AdminUsersPage() {
-  return <AdminUsersView />;
+export default function LegacyAdminUsersPage() {
+  redirect("/superadmin/users");
 }

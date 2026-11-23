@@ -31,6 +31,13 @@ export const tenantStaffRoleEnum = z.enum([
 ]);
 export type TenantStaffRole = z.infer<typeof tenantStaffRoleEnum>;
 
+export const tenantInvitationStatusEnum = z.enum([
+  "PENDING",
+  "ACCEPTED",
+  "REJECTED",
+]);
+export type TenantInvitationStatus = z.infer<typeof tenantInvitationStatusEnum>;
+
 export const deliveryTypeEnum = z.enum(["DELIVERY", "TAKEAWAY", "DINE_IN"]);
 export type DeliveryType = z.infer<typeof deliveryTypeEnum>;
 
@@ -56,6 +63,44 @@ export const paymentStatusEnum = z.enum([
   "CHARGED_BACK",
 ]);
 export type PaymentStatus = z.infer<typeof paymentStatusEnum>;
+
+export const notificationTypeEnum = z.enum([
+  "STAFF_INVITATION",
+  "INVITATION_ACCEPTED",
+  "INVITATION_REJECTED",
+  "LOW_STOCK",
+  "OUT_OF_STOCK",
+  "STORE_OPENING_SOON",
+  "STORE_CLOSING_SOON",
+  "STORE_AUTO_CLOSED",
+  "STORE_AUTO_OPENED",
+  "SUBSCRIPTION_EXPIRING_SOON",
+  "NEW_ORDER_RECEIVED",
+  "ORDER_STATUS_CHANGED",
+]);
+export type NotificationType = z.infer<typeof notificationTypeEnum>;
+
+export const notificationActionStatusEnum = z.enum([
+  "NONE",
+  "PENDING",
+  "ACCEPTED",
+  "REJECTED",
+]);
+export type NotificationActionStatus = z.infer<
+  typeof notificationActionStatusEnum
+>;
+
+export const invitationActionTypeEnum = z.enum(["ACCEPT", "REJECT"]);
+export type InvitationActionType = z.infer<typeof invitationActionTypeEnum>;
+
+export const LOCAL_TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+
+export const localTimeSchema = z
+  .string()
+  .regex(
+    LOCAL_TIME_REGEX,
+    "Formato de hora requerido: HH:mm o HH:mm:ss"
+  );
 
 // ─── Envelopes Estándar ──────────────────────────────────────────────────────
 

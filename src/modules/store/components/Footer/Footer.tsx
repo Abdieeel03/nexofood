@@ -63,7 +63,11 @@ export const Footer: React.FC = () => {
               )}
               <li>
                 <Link
-                  href="/store/account"
+                  href={
+                    activeSlug
+                      ? `/store/${encodeURIComponent(activeSlug)}/account`
+                      : "/store/account"
+                  }
                   className="hover:text-primary transition-colors"
                 >
                   Mi cuenta y direcciones

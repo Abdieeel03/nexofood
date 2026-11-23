@@ -1,12 +1,19 @@
 import { z } from "zod";
 import { userResponseSchema } from "./auth.schema";
 import {
+  localTimeSchema,
   passwordPolicySchema,
+  tenantInvitationStatusEnum,
   tenantStaffRoleEnum,
   uuidSchema,
   wgs84LatSchema,
   wgs84LngSchema,
 } from "./common.schema";
+
+const optionalLocalTimeField = z
+  .union([localTimeSchema, z.literal("")])
+  .nullable()
+  .optional();
 
 // ─── Request DTOs (3. Tenant / Store) ────────────────────────────────────────
 
@@ -43,11 +50,24 @@ export const tenantCreateRequestSchema = z
       .min(0, "La tarifa mínima es 0.00")
       .max(1000, "La tarifa máxima es 1000.00")
       .optional(),
+    openingTime: optionalLocalTimeField,
+    closingTime: optionalLocalTimeField,
   })
   .refine((data) => (data.latitude == null) === (data.longitude == null), {
     message: "Debes enviar latitud y longitud juntas",
     path: ["latitude"],
-  });
+  })
+  .refine(
+    (data) => {
+      const hasOpen = Boolean(data.openingTime && data.openingTime.trim());
+      const hasClose = Boolean(data.closingTime && data.closingTime.trim());
+      return hasOpen === hasClose;
+    },
+    {
+      message: "Debes indicar tanto la hora de apertura como la hora de cierre",
+      path: ["closingTime"],
+    }
+  );
 export type TenantCreateRequest = z.infer<typeof tenantCreateRequestSchema>;
 
 export const tenantUpdateRequestSchema = z
@@ -74,11 +94,25 @@ export const tenantUpdateRequestSchema = z
       .max(1000, "La tarifa máxima es 1000.00")
       .optional(),
     isActive: z.boolean().optional(),
+    openingTime: optionalLocalTimeField,
+    closingTime: optionalLocalTimeField,
+    isOpen: z.boolean().optional(),
   })
   .refine((data) => (data.latitude == null) === (data.longitude == null), {
     message: "Debes enviar latitud y longitud juntas",
     path: ["latitude"],
-  });
+  })
+  .refine(
+    (data) => {
+      const hasOpen = Boolean(data.openingTime && data.openingTime.trim());
+      const hasClose = Boolean(data.closingTime && data.closingTime.trim());
+      return hasOpen === hasClose;
+    },
+    {
+      message: "Debes indicar tanto la hora de apertura como la hora de cierre",
+      path: ["closingTime"],
+    }
+  );
 export type TenantUpdateRequest = z.infer<typeof tenantUpdateRequestSchema>;
 
 export const tenantStatusRequestSchema = z.object({
@@ -87,7 +121,10 @@ export const tenantStatusRequestSchema = z.object({
 export type TenantStatusRequest = z.infer<typeof tenantStatusRequestSchema>;
 
 export const tenantMemberRequestSchema = z.object({
-  userId: uuidSchema("ID de usuario inválido"),
+  email: z
+    .email("Debe proporcionar un correo electrónico válido")
+    .min(1, "El correo electrónico del usuario es obligatorio")
+    .max(255, "El correo no puede exceder 255 caracteres"),
   role: tenantStaffRoleEnum,
 });
 export type TenantMemberRequest = z.infer<typeof tenantMemberRequestSchema>;
@@ -192,6 +229,9 @@ export const tenantResponseSchema = z.object({
   mpConnectedAt: z.string().nullable(),
   mpTokenExpiresAt: z.string().nullable(),
   isActive: z.boolean(),
+  openingTime: z.string().nullable().optional().default(null),
+  closingTime: z.string().nullable().optional().default(null),
+  isOpen: z.boolean().optional().default(true),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -207,6 +247,7 @@ export const tenantMemberResponseSchema = z.object({
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  invitationStatus: tenantInvitationStatusEnum.nullable().optional().default(null),
 });
 export type TenantMemberResponse = z.infer<typeof tenantMemberResponseSchema>;
 

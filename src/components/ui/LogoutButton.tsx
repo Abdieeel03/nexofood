@@ -1,7 +1,8 @@
 "use client";
 
 import { useTransition } from "react";
-import { logoutAction } from "@/lib/auth-actions";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button, type ButtonSize, type ButtonVariant } from "./Button";
 
 export interface LogoutButtonProps {
@@ -19,11 +20,23 @@ export const LogoutButton = ({
   className = "",
   label = "Cerrar sesión",
 }: LogoutButtonProps) => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
 
   const handleLogout = () => {
     startTransition(async () => {
-      await logoutAction(redirectTo);
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "same-origin",
+        });
+      } catch {
+        // Redirigir de todas formas aunque falle la petición
+      }
+      queryClient.clear();
+      router.replace(redirectTo);
+      router.refresh();
     });
   };
 

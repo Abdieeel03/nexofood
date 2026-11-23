@@ -23,11 +23,13 @@ export function EmployeesHeader({
     <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-on-surface">
-          Equipo y Staff
+          Equipo e Invitaciones
         </h1>
         <p className="mt-1 text-sm text-on-surface-variant flex items-center gap-2">
           <Icon name="storefront" size={16} className="text-primary" />
-          <span>Administración de accesos y roles en {tenantName}</span>
+          <span>
+            Administración de staff e invitaciones por correo en {tenantName}
+          </span>
         </p>
       </div>
 
@@ -49,11 +51,11 @@ export function EmployeesHeader({
             type="button"
             variant="primary"
             size="sm"
-            icon="person_add"
+            icon="mail"
             iconPosition="left"
             onClick={onAddMember}
           >
-            Vincular miembro
+            Invitar por correo
           </Button>
         )}
       </div>

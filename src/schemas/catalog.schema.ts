@@ -280,6 +280,9 @@ export const storefrontMenuResponseSchema = z.object({
   logoUrl: z.string().nullable(),
   bannerUrl: z.string().nullable(),
   onlinePaymentsEnabled: z.boolean(),
+  openingTime: z.string().nullable().optional().default(null),
+  closingTime: z.string().nullable().optional().default(null),
+  isOpen: z.boolean().optional().default(true),
   categories: z.array(storefrontCategoryResponseSchema),
   uncategorizedProducts: z.array(storefrontProductResponseSchema),
 });

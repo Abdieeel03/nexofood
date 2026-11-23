@@ -13,7 +13,9 @@ export const PROTECTED_ROUTES = [
   "/customers",
   "/onboarding",
   "/account",
+  "/notifications",
   "/admin",
+  "/superadmin",
   "/settings",
 ] as const;
 

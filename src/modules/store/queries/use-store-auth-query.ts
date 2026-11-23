@@ -32,6 +32,7 @@ export function useStoreMeQuery() {
       }
     },
     staleTime: 60 * 1000,
+    refetchOnMount: "always",
   });
 }
 
@@ -47,5 +48,6 @@ export function useMyAddressesQuery(enabled: boolean) {
         schema: z.array(customerAddressResponseSchema),
       }),
     staleTime: 60 * 1000,
+    refetchOnMount: "always",
   });
 }

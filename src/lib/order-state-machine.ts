@@ -1,9 +1,12 @@
 import type {
   DeliveryType,
+  NotificationActionStatus,
+  NotificationType,
   OrderStatus,
   PaymentStatus,
   SubscriptionPaymentStatus,
   SubscriptionStatus,
+  TenantInvitationStatus,
   TenantStaffRole,
   UserSystemRole,
 } from "@/schemas/common.schema";
@@ -77,6 +80,95 @@ export const TENANT_STAFF_ROLE_META: Record<TenantStaffRole, StatusMeta> = {
   ADMIN: { label: "Administrador", variant: "info" },
   COCINERO: { label: "Cocinero", variant: "warning" },
   REPARTIDOR: { label: "Repartidor", variant: "secondary" },
+};
+
+export const TENANT_INVITATION_STATUS_META: Record<
+  TenantInvitationStatus,
+  StatusMeta
+> = {
+  PENDING: { label: "Pendiente", variant: "warning" },
+  ACCEPTED: { label: "Aceptada", variant: "success" },
+  REJECTED: { label: "Rechazada", variant: "danger" },
+};
+
+export const NOTIFICATION_ACTION_STATUS_META: Record<
+  NotificationActionStatus,
+  StatusMeta
+> = {
+  NONE: { label: "Informativa", variant: "neutral" },
+  PENDING: { label: "Pendiente de respuesta", variant: "warning" },
+  ACCEPTED: { label: "Aceptada", variant: "success" },
+  REJECTED: { label: "Rechazada", variant: "danger" },
+};
+
+export interface NotificationTypeMeta extends StatusMeta {
+  icon: string;
+}
+
+export const NOTIFICATION_TYPE_META: Record<
+  NotificationType,
+  NotificationTypeMeta
+> = {
+  STAFF_INVITATION: {
+    label: "Invitación de equipo",
+    variant: "primary",
+    icon: "mail",
+  },
+  INVITATION_ACCEPTED: {
+    label: "Invitación aceptada",
+    variant: "success",
+    icon: "how_to_reg",
+  },
+  INVITATION_REJECTED: {
+    label: "Invitación rechazada",
+    variant: "danger",
+    icon: "person_remove",
+  },
+  LOW_STOCK: {
+    label: "Stock bajo",
+    variant: "warning",
+    icon: "inventory_2",
+  },
+  OUT_OF_STOCK: {
+    label: "Sin stock",
+    variant: "danger",
+    icon: "production_quantity_limits",
+  },
+  STORE_OPENING_SOON: {
+    label: "Apertura próxima",
+    variant: "info",
+    icon: "schedule",
+  },
+  STORE_CLOSING_SOON: {
+    label: "Cierre próximo",
+    variant: "warning",
+    icon: "schedule",
+  },
+  STORE_AUTO_CLOSED: {
+    label: "Cierre automático",
+    variant: "neutral",
+    icon: "door_front",
+  },
+  STORE_AUTO_OPENED: {
+    label: "Apertura automática",
+    variant: "success",
+    icon: "storefront",
+  },
+  SUBSCRIPTION_EXPIRING_SOON: {
+    label: "Suscripción por vencer",
+    variant: "warning",
+    icon: "credit_card",
+  },
+  NEW_ORDER_RECEIVED: {
+    label: "Nuevo pedido",
+    variant: "secondary",
+    icon: "receipt_long",
+  },
+  ORDER_STATUS_CHANGED: {
+    label: "Estado de pedido",
+    variant: "info",
+    icon: "local_shipping",
+  },
 };
 
 // ─── Máquina de Estados de Pedidos (OrderStateMachine) ───────────────────────

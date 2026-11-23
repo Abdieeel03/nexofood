@@ -200,7 +200,7 @@ export const TaxesTab: React.FC<TaxesTabProps> = ({ tenantId, canEdit }) => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-outline-variant/70 bg-surface-card p-4 shadow-level-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-outline-variant/70 bg-surface-card p-4 shadow-level-1">
         <search
           aria-label="Filtrar impuestos"
           className="flex flex-wrap items-center gap-4"
@@ -230,6 +230,7 @@ export const TaxesTab: React.FC<TaxesTabProps> = ({ tenantId, canEdit }) => {
             icon="add"
             iconPosition="left"
             onClick={openCreate}
+            className="w-full sm:w-auto"
           >
             Nuevo impuesto
           </Button>
@@ -241,11 +242,18 @@ export const TaxesTab: React.FC<TaxesTabProps> = ({ tenantId, canEdit }) => {
           <li>
             <strong>Inclusivo (ej. IGV 18% en Perú):</strong> el impuesto ya
             viene dentro del precio de venta (
-            <code>precioBase = precioVenta / (1 + tasa / 100)</code>).
+            <code className="break-all sm:break-normal">
+              precioBase = precioVenta / (1 + tasa / 100)
+            </code>
+            ).
           </li>
           <li>
             <strong>Exclusivo:</strong> la tasa se calcula sobre el precio base
-            y se suma al total (<code>impuesto = precioBase × tasa / 100</code>).
+            y se suma al total (
+            <code className="break-all sm:break-normal">
+              impuesto = precioBase × tasa / 100
+            </code>
+            ).
           </li>
           <li>
             <strong>Sin impuesto o inactivo:</strong> el producto se considera

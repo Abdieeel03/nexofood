@@ -68,6 +68,9 @@ export default async function StoreSlugPage({ params }: StoreSlugPageProps) {
           logoUrl: initialTenant.logoUrl,
           bannerUrl: initialTenant.bannerUrl,
           onlinePaymentsEnabled: initialTenant.onlinePaymentsEnabled,
+          openingTime: initialTenant.openingTime,
+          closingTime: initialTenant.closingTime,
+          isOpen: false,
           categories: [],
           uncategorizedProducts: [],
         };

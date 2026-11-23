@@ -2,14 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Pagination } from "@/components/ui/Pagination";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatCurrencyPEN } from "@/lib/format";
+import { formatCurrencyPEN, formatScheduleRange } from "@/lib/format";
 import type { CartItemResponse } from "@/schemas/cart.schema";
 import type {
   StorefrontMenuResponse,
@@ -53,8 +52,11 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
     slug,
     initialTenant
   );
-  const { data: menu = initialMenu, isFetching: isFetchingMenu } =
-    useStorefrontMenuQuery(slug, initialMenu, tenant.isActive);
+  const { data: menu = initialMenu } = useStorefrontMenuQuery(
+    slug,
+    initialMenu,
+    tenant.isActive
+  );
   const { data: categories = [] } = useStorefrontCategoriesQuery(
     slug,
     tenant.isActive
@@ -141,9 +143,16 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
     updateItemMutation.isPending ||
     removeItemMutation.isPending;
 
+  const isStoreOpen =
+    tenant.isActive && (menu.isOpen ?? tenant.isOpen) !== false;
+  const scheduleText = formatScheduleRange(
+    menu.openingTime ?? tenant.openingTime,
+    menu.closingTime ?? tenant.closingTime
+  );
+
   const handleQuickAdd = async (product: StorefrontProductResponse) => {
     setCartFeedbackError(null);
-    if (!tenant.isActive || product.stock === 0 || !product.isAvailable) {
+    if (!isStoreOpen || product.stock === 0 || !product.isAvailable) {
       return;
     }
 
@@ -222,41 +231,11 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
     return menu.categories.map((c) => ({ id: c.id, name: c.name }));
   }, [categories, menu.categories]);
 
-  const storeClosed = !tenant.isActive;
+  const storeInactive = !tenant.isActive;
+  const storeClosed = !isStoreOpen;
 
   return (
     <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 space-y-6 pb-24 lg:pb-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <nav
-          aria-label="Ruta de navegación"
-          className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant"
-        >
-          <Link href="/store" className="hover:text-primary transition-colors">
-            Buscar tienda
-          </Link>
-          <Icon name="chevron_right" size={16} />
-          <span className="text-on-surface font-bold">{tenant.name}</span>
-        </nav>
-
-        <div className="flex items-center gap-2">
-          {isFetchingMenu && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-mint-subtle px-2.5 py-1 rounded-full">
-              <Icon name="sync" size={13} className="animate-spin" />
-              <span>Actualizando menú</span>
-            </span>
-          )}
-          {user && (
-            <Link
-              href={`/store/${encodeURIComponent(slug)}/orders`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-outline-variant bg-surface-card text-xs font-bold text-on-surface hover:border-primary hover:text-primary transition-colors"
-            >
-              <Icon name="receipt_long" size={15} />
-              <span>Mis pedidos</span>
-            </Link>
-          )}
-        </div>
-      </div>
-
       {/* Hero del restaurante */}
       <section className="rounded-3xl border border-outline-variant/60 bg-surface-card overflow-hidden shadow-level-1">
         <div className="relative h-44 sm:h-56 w-full bg-surface-container">
@@ -278,7 +257,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
 
         <div className="px-5 sm:px-8 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 sm:-mt-12 relative">
-            <div className="flex items-end gap-4">
+            <div className="flex items-end gap-4 min-w-0">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-surface-card border-4 border-surface-card shadow-level-2 overflow-hidden flex items-center justify-center shrink-0">
                 {tenant.logoUrl ? (
                   <Image
@@ -295,16 +274,16 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
                 )}
               </div>
 
-              <div className="pt-2 space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">
+              <div className="pt-2 space-y-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight truncate">
                     {tenant.name}
                   </h1>
                   <Badge
-                    variant={tenant.isActive ? "success" : "danger"}
+                    variant={isStoreOpen ? "success" : "danger"}
                     dot
                   >
-                    {tenant.isActive ? "Abierto" : "Cerrado"}
+                    {isStoreOpen ? "Abierto" : "Cerrado"}
                   </Badge>
                 </div>
                 <p className="text-xs font-medium text-on-surface-variant">
@@ -312,41 +291,67 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
                 </p>
               </div>
             </div>
-
-            <dl className="flex flex-wrap items-center gap-4 text-xs font-semibold text-on-surface-variant">
-              {tenant.address && (
-                <div className="flex items-center gap-1.5">
-                  <Icon
-                    name="location_on"
-                    size={16}
-                    className="text-primary"
-                  />
-                  <dt className="sr-only">Dirección</dt>
-                  <dd>{tenant.address}</dd>
-                </div>
-              )}
-              {tenant.phone && (
-                <div className="flex items-center gap-1.5">
-                  <Icon name="call" size={16} className="text-primary" />
-                  <dt className="sr-only">Teléfono</dt>
-                  <dd className="tabular-nums">{tenant.phone}</dd>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5">
-                <Icon name="two_wheeler" size={16} className="text-primary" />
-                <dt className="sr-only">Envío base</dt>
-                <dd className="tabular-nums">
-                  Envío base: {formatCurrencyPEN(tenant.defaultDeliveryFee)}
-                </dd>
-              </div>
-            </dl>
           </div>
+
+          <dl className="mt-5 pt-4 border-t border-outline-variant/40 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-semibold text-on-surface-variant">
+            {scheduleText && (
+              <div className="inline-flex items-center gap-1.5 shrink-0">
+                <Icon
+                  name="schedule"
+                  size={16}
+                  className="text-primary shrink-0"
+                />
+                <dt className="sr-only">Horario de atención</dt>
+                <dd className="tabular-nums text-on-surface">{scheduleText}</dd>
+              </div>
+            )}
+            {tenant.address && (
+              <div className="inline-flex items-center gap-1.5 min-w-0">
+                <Icon
+                  name="location_on"
+                  size={16}
+                  className="text-primary shrink-0"
+                />
+                <dt className="sr-only">Dirección</dt>
+                <dd className="truncate">{tenant.address}</dd>
+              </div>
+            )}
+            {tenant.phone && (
+              <div className="inline-flex items-center gap-1.5 shrink-0">
+                <Icon name="call" size={16} className="text-primary shrink-0" />
+                <dt className="sr-only">Teléfono</dt>
+                <dd className="tabular-nums">{tenant.phone}</dd>
+              </div>
+            )}
+            <div className="inline-flex items-center gap-1.5 shrink-0">
+              <Icon
+                name="two_wheeler"
+                size={16}
+                className="text-primary shrink-0"
+              />
+              <dt className="sr-only">Envío base</dt>
+              <dd className="tabular-nums">
+                Envío base: {formatCurrencyPEN(tenant.defaultDeliveryFee)}
+              </dd>
+            </div>
+          </dl>
         </div>
       </section>
 
-      {storeClosed && (
-        <Alert variant="danger" title="Tienda temporalmente cerrada">
+      {storeInactive && (
+        <Alert variant="danger" title="Tienda temporalmente inactiva">
           Este restaurante no está recibiendo pedidos en este momento.
+        </Alert>
+      )}
+
+      {!storeInactive && !isStoreOpen && (
+        <Alert
+          variant="warning"
+          title="Restaurante cerrado en este momento"
+        >
+          {scheduleText
+            ? `El horario de atención de ${tenant.name} es de ${scheduleText}. Puedes explorar el menú, pero los pedidos y el checkout estarán disponibles únicamente cuando el restaurante esté abierto.`
+            : `${tenant.name} se encuentra cerrado en este momento y no está recibiendo pedidos.`}
         </Alert>
       )}
 
@@ -358,7 +363,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
         </Alert>
       )}
 
-      {!storeClosed && <CoverageEstimator tenant={tenant} />}
+      {!storeInactive && <CoverageEstimator tenant={tenant} />}
 
       {cartFeedbackError && (
         <Alert
@@ -370,7 +375,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
       )}
 
       {/* Buscador y filtro por categorías */}
-      {!storeClosed && (
+      {!storeInactive && (
         <section
           aria-label="Buscar y filtrar productos del menú"
           className="space-y-3"
@@ -465,7 +470,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
       )}
 
       {/* Resultados filtrados/buscados vs menú completo por secciones */}
-      {!storeClosed && isFiltering ? (
+      {!storeInactive && isFiltering ? (
         <section aria-label="Resultados de búsqueda" className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-extrabold text-on-surface flex items-center gap-2">
@@ -554,7 +559,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
             </>
           )}
         </section>
-      ) : !storeClosed ? (
+      ) : !storeInactive ? (
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 items-start">
           {sectionEntries.length > 0 && (
             <aside className="lg:sticky lg:top-20 z-20">

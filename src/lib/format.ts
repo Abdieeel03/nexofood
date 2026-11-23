@@ -79,3 +79,46 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, "")
     .replace(/-{2,}/g, "-");
 }
+
+/**
+ * Formatea un `LocalTime` (`HH:mm:ss` o `HH:mm`) como `HH:mm` para UI e `<input type="time">`.
+ */
+export function formatLocalTime(value: string | null | undefined): string {
+  if (!value) return "";
+  const trimmed = value.trim();
+  const match = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/.exec(trimmed);
+  if (!match) return trimmed;
+  return `${match[1]}:${match[2]}`;
+}
+
+/**
+ * Normaliza un valor de `<input type="time">` (`HH:mm` o `HH:mm:ss`) a `HH:mm:ss` para la API.
+ */
+export function toApiLocalTime(
+  value: string | null | undefined
+): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^([01]\d|2[0-3]):[0-5]\d$/.test(trimmed)) {
+    return `${trimmed}:00`;
+  }
+  return trimmed;
+}
+
+/**
+ * Formatea un rango horario de apertura y cierre (ej. `"09:00 – 23:00"` o `"24 horas"`).
+ */
+export function formatScheduleRange(
+  openingTime: string | null | undefined,
+  closingTime: string | null | undefined
+): string | null {
+  const open = formatLocalTime(openingTime);
+  const close = formatLocalTime(closingTime);
+  if (!open || !close) return null;
+  if (open === close) return `24 horas (${open})`;
+  return `${open} – ${close}`;
+}

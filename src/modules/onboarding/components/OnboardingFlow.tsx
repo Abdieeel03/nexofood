@@ -17,9 +17,15 @@ import {
   getApiErrorMessage,
   isApiError,
 } from "@/lib/api-client";
-import { formatCurrencyPEN, formatDate, slugify } from "@/lib/format";
+import {
+  formatCurrencyPEN,
+  formatDate,
+  slugify,
+  toApiLocalTime,
+} from "@/lib/format";
 import { SUBSCRIPTION_STATUS_META } from "@/lib/order-state-machine";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
+import { PendingInvitationsBanner } from "@/modules/notifications";
 import { cleanPayload } from "@/schemas/common.schema";
 import {
   subscriptionCheckoutResponseSchema,
@@ -49,8 +55,14 @@ export function OnboardingFlow() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const baseId = useId();
-  const { user, activeTenant, refreshUser, refreshTenant, setActiveTenant } =
-    useSessionTenant();
+  const {
+    user,
+    activeTenant,
+    refreshUser,
+    refreshTenant,
+    setActiveTenant,
+    switchTenant,
+  } = useSessionTenant();
 
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   const [step1Error, setStep1Error] = useState<string | null>(null);
@@ -168,6 +180,8 @@ export function OnboardingFlow() {
       defaultDeliveryFee: 0,
       latitude: null,
       longitude: null,
+      openingTime: "09:00",
+      closingTime: "23:00",
     },
   });
 
@@ -220,6 +234,8 @@ export function OnboardingFlow() {
         longitude: hasBothCoords ? values.longitude : undefined,
         deliveryRadiusKm: values.deliveryRadiusKm,
         defaultDeliveryFee: values.defaultDeliveryFee,
+        openingTime: toApiLocalTime(values.openingTime),
+        closingTime: toApiLocalTime(values.closingTime),
       });
 
       return apiClient.post<TenantResponse>("/tenants", payload, {
@@ -288,10 +304,21 @@ export function OnboardingFlow() {
           Configura tu restaurante en NexoFood
         </h1>
         <p className="text-sm text-on-surface-variant max-w-2xl">
-          Activa tu plan SaaS y registra los datos comerciales y de cobertura de
-          tu restaurante para comenzar a vender online.
+          Activa tu plan SaaS y registra los datos comerciales, horario y
+          cobertura de tu restaurante para comenzar a vender online.
         </p>
       </header>
+
+      <PendingInvitationsBanner
+        onInvitationResponded={async (updated, decision) => {
+          if (decision === "ACCEPT") {
+            await refreshUser();
+            await switchTenant(updated.tenantId);
+            router.push("/dashboard");
+            router.refresh();
+          }
+        }}
+      />
 
       {/* Progress Stepper */}
       <nav aria-label="Progreso de activación">
@@ -785,6 +812,58 @@ export function OnboardingFlow() {
                   {...tenantForm.register("bannerUrl")}
                   className={inputClass}
                 />
+              </div>
+
+              <div>
+                <label
+                  htmlFor={`${baseId}-openingTime`}
+                  className="block text-sm font-semibold text-on-surface mb-1.5"
+                >
+                  Hora de apertura (LocalTime)
+                </label>
+                <input
+                  id={`${baseId}-openingTime`}
+                  type="time"
+                  step={60}
+                  aria-invalid={Boolean(
+                    tenantForm.formState.errors.openingTime
+                  )}
+                  {...tenantForm.register("openingTime")}
+                  className={`${inputClass} tabular-nums`}
+                />
+                {tenantForm.formState.errors.openingTime && (
+                  <p className="mt-1 text-xs font-semibold text-error">
+                    {tenantForm.formState.errors.openingTime.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor={`${baseId}-closingTime`}
+                  className="block text-sm font-semibold text-on-surface mb-1.5"
+                >
+                  Hora de cierre (LocalTime)
+                </label>
+                <input
+                  id={`${baseId}-closingTime`}
+                  type="time"
+                  step={60}
+                  aria-invalid={Boolean(
+                    tenantForm.formState.errors.closingTime
+                  )}
+                  {...tenantForm.register("closingTime")}
+                  className={`${inputClass} tabular-nums`}
+                />
+                <p className="mt-1 text-xs text-on-surface-variant">
+                  Soporta horario nocturno (ej. 18:00 a 02:00) o 24h si apertura
+                  y cierre son iguales.
+                </p>
+                {tenantForm.formState.errors.closingTime && (
+                  <p className="mt-1 text-xs font-semibold text-error">
+                    {tenantForm.formState.errors.closingTime.message}
+                  </p>
+                )}
               </div>
             </div>
 

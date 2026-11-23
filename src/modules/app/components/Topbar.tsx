@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { getInitials } from "@/lib/format";
+import { formatScheduleRange } from "@/lib/format";
 import { TENANT_STAFF_ROLE_META } from "@/lib/order-state-machine";
+import { canAccessGlobalAdmin } from "@/lib/permissions";
+import { NotificationBell } from "@/modules/notifications";
 import { useSessionTenant } from "./SessionTenantProvider";
 
 export interface TopbarProps {
@@ -26,10 +29,11 @@ export function Topbar({
   const {
     user,
     activeTenant,
-    activeRole,
     systemRole,
     isLoadingTenant,
     switchTenant,
+    refreshUser,
+    refreshTenant,
   } = useSessionTenant();
 
   const [switchError, setSwitchError] = useState<string | null>(null);
@@ -48,18 +52,6 @@ export function Topbar({
       );
     }
   };
-
-  const roleBadgeLabel = activeRole
-    ? TENANT_STAFF_ROLE_META[activeRole].label
-    : systemRole === "SUPERADMIN"
-      ? "SUPERADMIN"
-      : "USER";
-
-  const roleBadgeVariant = activeRole
-    ? TENANT_STAFF_ROLE_META[activeRole].variant
-    : systemRole === "SUPERADMIN"
-      ? "primary"
-      : "neutral";
 
   return (
     <header className="min-h-16 bg-surface-card/95 backdrop-blur-md border-b border-outline-variant/50 px-4 md:px-6 py-2 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-20">
@@ -89,17 +81,31 @@ export function Topbar({
             )}
           </div>
         ) : activeTenant ? (
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
             <span className="text-sm font-bold text-on-surface truncate max-w-[200px] sm:max-w-xs">
               {activeTenant.name}
             </span>
             <Badge
-              variant={activeTenant.isActive ? "success" : "warning"}
+              variant={
+                activeTenant.isActive && activeTenant.isOpen !== false
+                  ? "success"
+                  : "danger"
+              }
               dot
               size="sm"
             >
-              {activeTenant.isActive ? "Activo" : "Inactivo"}
+              {activeTenant.isActive && activeTenant.isOpen !== false
+                ? "Abierto"
+                : "Cerrado"}
             </Badge>
+            {formatScheduleRange(
+              activeTenant.openingTime,
+              activeTenant.closingTime
+            ) && (
+              <span className="hidden md:inline text-xs font-semibold text-on-surface-variant tabular-nums">
+                ({formatScheduleRange(activeTenant.openingTime, activeTenant.closingTime)})
+              </span>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
@@ -115,8 +121,8 @@ export function Topbar({
         )}
       </div>
 
-      {/* Right section: optional tenant switcher + user identity */}
-      <div className="flex items-center gap-3">
+      {/* Right section: optional tenant switcher + storefront link + notifications */}
+      <div className="flex items-center gap-2.5">
         {actions}
 
         {user.staffMemberships.length > 1 && (
@@ -152,22 +158,39 @@ export function Topbar({
           </div>
         )}
 
-        <div className="flex items-center gap-2.5 pl-1">
-          <div className="hidden sm:flex flex-col items-end">
-            <span className="text-xs font-bold text-on-surface leading-tight">
-              {user.fullName}
-            </span>
-            <Badge variant={roleBadgeVariant} size="sm" className="mt-0.5">
-              {roleBadgeLabel}
-            </Badge>
-          </div>
-          <div
-            aria-hidden="true"
-            className="w-9 h-9 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center justify-center shadow-level-1 shrink-0"
+        {canAccessGlobalAdmin(systemRole) && (
+          <Link
+            href="/superadmin"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-inverse-surface text-inverse-on-surface text-xs sm:text-sm font-bold hover:bg-inverse-surface-dark transition-colors shrink-0 shadow-level-1"
           >
-            {getInitials(user.fullName)}
-          </div>
-        </div>
+            <Icon
+              name="shield_person"
+              size={18}
+              className="text-inverse-primary shrink-0"
+            />
+            <span>SuperAdmin</span>
+          </Link>
+        )}
+
+        <Link
+          href={
+            activeTenant
+              ? `/store/${encodeURIComponent(activeTenant.slug)}`
+              : "/store"
+          }
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-outline-variant/80 bg-surface-card text-xs sm:text-sm font-bold text-on-surface hover:border-primary hover:text-primary hover:bg-mint-subtle/40 transition-colors shrink-0"
+        >
+          <Icon name="storefront" size={18} className="text-primary shrink-0" />
+          <span>Ir al Storefront</span>
+        </Link>
+
+        <NotificationBell
+          centerHref="/notifications"
+          onInvitationAccepted={async () => {
+            await refreshUser();
+            await refreshTenant();
+          }}
+        />
       </div>
 
       {switchError && (

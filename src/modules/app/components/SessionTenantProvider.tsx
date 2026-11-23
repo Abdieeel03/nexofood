@@ -8,8 +8,10 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { getEffectiveTenantRole } from "@/lib/permissions";
+import { storeKeys } from "@/modules/store/queries/keys";
 import {
   userProfileResponseSchema,
   type UserProfileResponse,
@@ -74,12 +76,18 @@ export function SessionTenantProvider({
   initialTenant,
   children,
 }: SessionTenantProviderProps) {
+  const queryClient = useQueryClient();
   const [prevInitialUser, setPrevInitialUser] = useState(initialUser);
   const [prevInitialTenant, setPrevInitialTenant] = useState(initialTenant);
   const [user, setUser] = useState<UserProfileResponse>(initialUser);
   const [activeTenantState, setActiveTenantState] =
     useState<TenantResponse | null>(initialTenant);
   const [isLoadingTenant, setIsLoadingTenant] = useState(false);
+
+  // Mantener sincronizada la sesión del panel SaaS con la caché de React Query del storefront
+  useEffect(() => {
+    queryClient.setQueryData(storeKeys.me, user);
+  }, [queryClient, user]);
 
   if (initialUser !== prevInitialUser) {
     setPrevInitialUser(initialUser);

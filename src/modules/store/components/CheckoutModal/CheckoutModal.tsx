@@ -7,7 +7,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { MapPicker } from "@/components/ui/MapPicker";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { formatCurrencyPEN } from "@/lib/format";
+import { formatCurrencyPEN, formatScheduleRange } from "@/lib/format";
 import type { DeliveryType } from "@/schemas/common.schema";
 import { orderCheckoutRequestSchema } from "@/schemas/order.schema";
 import { useStoreUi } from "@/stores/store-ui.store";
@@ -173,7 +173,14 @@ const CheckoutModalContent: React.FC<CheckoutModalContentProps> = ({
     );
   }
 
-  const isStoreClosed = tenant ? !tenant.isActive : false;
+  const isEffectiveOpen =
+    (tenant ? tenant.isActive : true) &&
+    (menu?.isOpen ?? tenant?.isOpen ?? true) !== false;
+  const isStoreClosed = !isEffectiveOpen;
+  const scheduleText = formatScheduleRange(
+    menu?.openingTime ?? tenant?.openingTime,
+    menu?.closingTime ?? tenant?.closingTime
+  );
   const onlinePaymentsDisabled =
     menu !== undefined
       ? !menu.onlinePaymentsEnabled
@@ -302,7 +309,9 @@ const CheckoutModalContent: React.FC<CheckoutModalContentProps> = ({
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
       {isStoreClosed && (
         <Alert variant="danger">
-          Este restaurante no está recibiendo pedidos en este momento.
+          {scheduleText
+            ? `El restaurante '${tenant?.name ?? slug}' se encuentra cerrado en este momento (Horario: ${scheduleText}).`
+            : `El restaurante '${tenant?.name ?? slug}' se encuentra cerrado en este momento.`}
         </Alert>
       )}
 

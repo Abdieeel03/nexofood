@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/ui/Icon";
 import { logoutAction } from "@/lib/auth-actions";
+import { NotificationBell } from "@/modules/notifications";
 import { useStoreUi } from "@/stores/store-ui.store";
 import { useActiveStoreSlug } from "../../hooks/use-active-store-slug";
 import { storeKeys } from "../../queries/keys";
@@ -96,42 +97,6 @@ export const Header: React.FC = () => {
             )}
           </div>
 
-          <nav
-            aria-label="Navegación de tienda"
-            className="hidden lg:flex items-center gap-1"
-          >
-            <Link
-              href="/store"
-              className="px-3 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
-            >
-              Buscar tienda
-            </Link>
-            {activeSlug && (
-              <Link
-                href={`/store/${encodeURIComponent(activeSlug)}`}
-                className="px-3 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
-              >
-                Menú
-              </Link>
-            )}
-            {activeSlug && user && (
-              <Link
-                href={`/store/${encodeURIComponent(activeSlug)}/orders`}
-                className="px-3 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
-              >
-                Mis pedidos
-              </Link>
-            )}
-            {user && (
-              <Link
-                href="/store/account"
-                className="px-3 py-2 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors"
-              >
-                Mi cuenta
-              </Link>
-            )}
-          </nav>
-
           <div className="flex items-center gap-2.5 shrink-0">
             {isMeLoading ? (
               <div
@@ -139,12 +104,21 @@ export const Header: React.FC = () => {
                 className="h-9 w-28 rounded-full bg-surface-container animate-pulse"
               />
             ) : user ? (
-              <UserMenu
-                user={user}
-                activeSlug={activeSlug}
-                isLoggingOut={isLoggingOut}
-                onLogout={handleLogout}
-              />
+              <>
+                <NotificationBell
+                  centerHref={
+                    activeSlug
+                      ? `/store/${encodeURIComponent(activeSlug)}/account`
+                      : "/store/account"
+                  }
+                />
+                <UserMenu
+                  user={user}
+                  activeSlug={activeSlug}
+                  isLoggingOut={isLoggingOut}
+                  onLogout={handleLogout}
+                />
+              </>
             ) : activeSlug ? (
               <button
                 type="button"

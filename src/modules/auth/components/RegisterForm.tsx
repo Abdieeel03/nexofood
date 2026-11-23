@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Alert } from "@/components/ui/Alert";
 import { LegalConsentNotice } from "@/components/legal/LegalLinks";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { registerAction } from "@/lib/auth-actions";
+import { storeKeys } from "@/modules/store/queries/keys";
 import {
   registerFormSchema,
   type RegisterFormValues,
@@ -20,6 +22,7 @@ const inputClass =
 
 export function RegisterForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const baseId = useId();
 
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -52,6 +55,7 @@ export function RegisterForm() {
     const result = await registerAction(data);
 
     if (result.success) {
+      await queryClient.invalidateQueries({ queryKey: storeKeys.me });
       router.push("/onboarding");
       router.refresh();
       return;

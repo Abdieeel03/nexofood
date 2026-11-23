@@ -22,6 +22,7 @@ import {
   SUBSCRIPTION_STATUS_META,
 } from "@/lib/order-state-machine";
 import {
+  canManageSettings,
   canViewCatalog,
   canViewDeliveries,
   canViewKds,
@@ -31,6 +32,7 @@ import {
 } from "@/lib/permissions";
 import { KpiCard } from "@/modules/app/components/KpiCard";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
+import { PendingInvitationsBanner } from "@/modules/notifications";
 import { userResponseSchema, type UserResponse } from "@/schemas/auth.schema";
 import {
   pageResponseSchema,
@@ -55,8 +57,14 @@ import { WelcomeBanner } from "./WelcomeBanner";
 
 export function DashboardView() {
   const router = useRouter();
-  const { user, activeTenant, activeRole, systemRole, switchTenant } =
-    useSessionTenant();
+  const {
+    user,
+    activeTenant,
+    activeRole,
+    systemRole,
+    switchTenant,
+    refreshUser,
+  } = useSessionTenant();
 
   const shouldRedirectToOnboarding =
     systemRole === "USER" &&
@@ -79,6 +87,8 @@ export function DashboardView() {
     hasTenant && canViewLiveTracking(activeRole, systemRole);
   const allowPaymentsAudit =
     hasTenant && canViewPaymentsAudit(activeRole, systemRole);
+  const allowManageSettings =
+    hasTenant && canManageSettings(activeRole, systemRole);
   const allowCatalog = hasTenant && canViewCatalog(activeRole, systemRole);
   const isOwner =
     hasTenant &&
@@ -300,24 +310,34 @@ export function DashboardView() {
   // Usuario con membresías pero sin restaurante cargado todavía
   if (!activeTenant) {
     return (
-      <div className="max-w-2xl mx-auto rounded-2xl border border-outline-variant/70 bg-surface-card p-6 shadow-level-1 space-y-4">
-        <h1 className="text-xl font-extrabold text-on-surface">
-          Selecciona un restaurante para continuar
-        </h1>
-        <p className="text-sm text-on-surface-variant">
-          Elige una de las sedes donde eres miembro del equipo:
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {user.staffMemberships.map((m) => (
-            <Button
-              key={m.tenantId}
-              type="button"
-              variant="outline"
-              onClick={() => switchTenant(m.tenantId)}
-            >
-              {m.tenantName}
-            </Button>
-          ))}
+      <div className="max-w-2xl mx-auto space-y-4">
+        <PendingInvitationsBanner
+          onInvitationResponded={async (updated, decision) => {
+            if (decision === "ACCEPT") {
+              await refreshUser();
+              await switchTenant(updated.tenantId);
+            }
+          }}
+        />
+        <div className="rounded-2xl border border-outline-variant/70 bg-surface-card p-6 shadow-level-1 space-y-4">
+          <h1 className="text-xl font-extrabold text-on-surface">
+            Selecciona un restaurante para continuar
+          </h1>
+          <p className="text-sm text-on-surface-variant">
+            Elige una de las sedes donde eres miembro del equipo:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {user.staffMemberships.map((m) => (
+              <Button
+                key={m.tenantId}
+                type="button"
+                variant="outline"
+                onClick={() => switchTenant(m.tenantId)}
+              >
+                {m.tenantName}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -421,7 +441,22 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6">
-      <WelcomeBanner tenant={activeTenant} mpConnected={mpConnected} />
+      <PendingInvitationsBanner
+        onInvitationResponded={async (updated, decision) => {
+          if (decision === "ACCEPT") {
+            await refreshUser();
+            await switchTenant(updated.tenantId);
+          }
+        }}
+      />
+
+      <WelcomeBanner
+        tenant={activeTenant}
+        mpConnected={mpConnected}
+        activeRole={activeRole}
+        systemRole={systemRole}
+        showMpStatus={allowPaymentsAudit}
+      />
 
       {/* Alertas operativas */}
       <div className="space-y-3">
@@ -430,15 +465,40 @@ export function DashboardView() {
             variant="warning"
             title="Restaurante pausado"
             action={
-              <Link
-                href="/dashboard/settings"
-                className="inline-flex items-center gap-1.5 text-xs font-bold underline"
-              >
-                Revisar configuración
-              </Link>
+              allowManageSettings ? (
+                <Link
+                  href="/dashboard/settings"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold underline"
+                >
+                  Revisar configuración
+                </Link>
+              ) : undefined
             }
           >
-            El storefront público no está aceptando nuevos pedidos actualmente.
+            {allowManageSettings
+              ? "El storefront público no está aceptando nuevos pedidos actualmente."
+              : "El restaurante se encuentra pausado temporalmente y no está recibiendo nuevos pedidos desde el storefront."}
+          </Alert>
+        )}
+
+        {activeTenant.isActive && activeTenant.isOpen === false && (
+          <Alert
+            variant="info"
+            title="Restaurante cerrado en este momento"
+            action={
+              allowManageSettings ? (
+                <Link
+                  href="/dashboard/settings"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold underline"
+                >
+                  Ajustar horario
+                </Link>
+              ) : undefined
+            }
+          >
+            {allowManageSettings
+              ? "Tu restaurante está fuera de su horario de atención (o marcado como cerrado). Los comensales no podrán confirmar nuevos pedidos en el checkout mientras esté cerrado."
+              : "El restaurante se encuentra fuera de su horario de atención o cerrado temporalmente. No ingresarán nuevos pedidos desde el storefront hasta la apertura."}
           </Alert>
         )}
 

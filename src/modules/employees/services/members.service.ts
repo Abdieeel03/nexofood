@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { apiClient } from "@/lib/api-client";
-import { cleanPayload } from "@/schemas/common.schema";
+import {
+  cleanPayload,
+  type TenantInvitationStatus,
+} from "@/schemas/common.schema";
 import {
   memberRoleUpdateRequestSchema,
   tenantMemberRequestSchema,
@@ -18,7 +21,7 @@ export async function fetchTenantMembers(
   signal?: AbortSignal
 ): Promise<TenantMemberResponse[]> {
   return apiClient.get<TenantMemberResponse[]>(
-    `/tenants/${tenantId}/members`,
+    `/tenants/${encodeURIComponent(tenantId)}/members`,
     {
       schema: z.array(tenantMemberResponseSchema),
       signal,
@@ -27,7 +30,26 @@ export async function fetchTenantMembers(
 }
 
 /**
- * Vincula un usuario NexoFood existente al restaurante (`POST /tenants/{tenantId}/members`).
+ * Lista las invitaciones enviadas por el restaurante (`GET /tenants/{tenantId}/members/invitations`).
+ */
+export async function fetchTenantInvitations(
+  tenantId: string,
+  status?: TenantInvitationStatus,
+  signal?: AbortSignal
+): Promise<TenantMemberResponse[]> {
+  return apiClient.get<TenantMemberResponse[]>(
+    `/tenants/${encodeURIComponent(tenantId)}/members/invitations`,
+    {
+      params: cleanPayload({ status }),
+      schema: z.array(tenantMemberResponseSchema),
+      signal,
+    }
+  );
+}
+
+/**
+ * Envía una invitación por correo electrónico a un usuario registrado (`POST /tenants/{tenantId}/members`).
+ * Crea una `TenantInvitation` en estado `PENDING` y notifica al usuario (`STAFF_INVITATION`).
  */
 export async function addTenantMember(
   tenantId: string,
@@ -35,7 +57,7 @@ export async function addTenantMember(
 ): Promise<TenantMemberResponse> {
   const parsed = tenantMemberRequestSchema.parse(payload);
   return apiClient.post<TenantMemberResponse>(
-    `/tenants/${tenantId}/members`,
+    `/tenants/${encodeURIComponent(tenantId)}/members`,
     cleanPayload(parsed),
     {
       schema: tenantMemberResponseSchema,
@@ -53,7 +75,7 @@ export async function updateMemberRole(
 ): Promise<TenantMemberResponse> {
   const parsed = memberRoleUpdateRequestSchema.parse(payload);
   return apiClient.patch<TenantMemberResponse>(
-    `/tenants/${tenantId}/members/${memberId}/role`,
+    `/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(memberId)}/role`,
     cleanPayload(parsed),
     {
       schema: tenantMemberResponseSchema,
@@ -69,7 +91,7 @@ export async function removeTenantMember(
   memberId: string
 ): Promise<string> {
   const response = await apiClient.deleteRaw<null>(
-    `/tenants/${tenantId}/members/${memberId}`
+    `/tenants/${encodeURIComponent(tenantId)}/members/${encodeURIComponent(memberId)}`
   );
   return response.message || "Miembro desvinculado exitosamente";
 }

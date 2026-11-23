@@ -12,6 +12,11 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { MapPicker } from "@/components/ui/MapPicker";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
+import {
+  formatLocalTime,
+  formatScheduleRange,
+  toApiLocalTime,
+} from "@/lib/format";
 import { canManageSettings, canViewPaymentsAudit } from "@/lib/permissions";
 import { EmptyState } from "@/modules/app/components/EmptyState";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
@@ -67,6 +72,9 @@ export function GeneralSettingsView() {
       defaultDeliveryFee: 0,
       latitude: null,
       longitude: null,
+      openingTime: "",
+      closingTime: "",
+      isOpen: true,
     },
   });
 
@@ -82,6 +90,9 @@ export function GeneralSettingsView() {
       defaultDeliveryFee: activeTenant.defaultDeliveryFee,
       latitude: activeTenant.latitude ?? null,
       longitude: activeTenant.longitude ?? null,
+      openingTime: formatLocalTime(activeTenant.openingTime),
+      closingTime: formatLocalTime(activeTenant.closingTime),
+      isOpen: activeTenant.isOpen ?? true,
     });
   }, [activeTenant, form]);
 
@@ -107,6 +118,9 @@ export function GeneralSettingsView() {
         defaultDeliveryFee: values.defaultDeliveryFee,
         latitude: hasBothCoords ? values.latitude : undefined,
         longitude: hasBothCoords ? values.longitude : undefined,
+        openingTime: toApiLocalTime(values.openingTime),
+        closingTime: toApiLocalTime(values.closingTime),
+        isOpen: values.isOpen,
       });
 
       return apiClient.put<TenantResponse>(
@@ -260,23 +274,43 @@ export function GeneralSettingsView() {
         </Alert>
       )}
 
-      {/* Estado Operativo */}
+      {/* Estado Operativo y Horario */}
       <section className="rounded-2xl border border-outline-variant/60 bg-surface-card p-6 shadow-level-1 flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <h2 className="text-base font-bold text-on-surface">
               Estado operativo del storefront
             </h2>
             <Badge
-              variant={activeTenant.isActive ? "success" : "warning"}
+              variant={
+                activeTenant.isActive && activeTenant.isOpen
+                  ? "success"
+                  : "danger"
+              }
               dot
             >
-              {activeTenant.isActive ? "Operativo" : "Pausado"}
+              {activeTenant.isActive && activeTenant.isOpen
+                ? "Abierto"
+                : "Cerrado"}
             </Badge>
+            {formatScheduleRange(
+              activeTenant.openingTime,
+              activeTenant.closingTime
+            ) && (
+              <Badge variant="info" size="sm">
+                Horario:{" "}
+                {formatScheduleRange(
+                  activeTenant.openingTime,
+                  activeTenant.closingTime
+                )}
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-on-surface-variant">
             {activeTenant.isActive
-              ? "Tu restaurante está visible y habilitado para recibir pedidos."
+              ? activeTenant.isOpen
+                ? "Tu restaurante está visible, abierto y habilitado para recibir pedidos."
+                : "El storefront está activo pero actualmente cerrado por horario o cierre manual."
               : "Las compras en tu storefront están temporalmente pausadas."}
           </p>
         </div>
@@ -484,6 +518,78 @@ export function GeneralSettingsView() {
                 {...form.register("bannerUrl")}
                 className={inputClass}
               />
+            </div>
+
+            <div>
+              <label
+                htmlFor={`${baseId}-openingTime`}
+                className="block text-sm font-semibold text-on-surface mb-1.5"
+              >
+                Hora de apertura (LocalTime)
+              </label>
+              <input
+                id={`${baseId}-openingTime`}
+                type="time"
+                step={60}
+                disabled={!canEdit}
+                aria-invalid={Boolean(form.formState.errors.openingTime)}
+                {...form.register("openingTime")}
+                className={`${inputClass} tabular-nums`}
+              />
+              {form.formState.errors.openingTime && (
+                <p className="mt-1 text-xs font-semibold text-error">
+                  {form.formState.errors.openingTime.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor={`${baseId}-closingTime`}
+                className="block text-sm font-semibold text-on-surface mb-1.5"
+              >
+                Hora de cierre (LocalTime)
+              </label>
+              <input
+                id={`${baseId}-closingTime`}
+                type="time"
+                step={60}
+                disabled={!canEdit}
+                aria-invalid={Boolean(form.formState.errors.closingTime)}
+                {...form.register("closingTime")}
+                className={`${inputClass} tabular-nums`}
+              />
+              <p className="mt-1 text-xs text-on-surface-variant">
+                StoreScheduleScheduler abre y cierra automáticamente según este
+                rango y envía avisos 15 min antes.
+              </p>
+              {form.formState.errors.closingTime && (
+                <p className="mt-1 text-xs font-semibold text-error">
+                  {form.formState.errors.closingTime.message}
+                </p>
+              )}
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-low/50 p-3.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  disabled={!canEdit}
+                  {...form.register("isOpen")}
+                  className="mt-0.5 h-5 w-5 accent-primary cursor-pointer"
+                />
+                <div className="min-w-0">
+                  <span className="text-sm font-bold text-on-surface block">
+                    Restaurante abierto para recibir pedidos (isOpen)
+                  </span>
+                  <span className="text-xs text-on-surface-variant">
+                    Desmárcalo para cerrar temporalmente la recepción de pedidos
+                    en el storefront. Nota: si tienes horario configurado y la
+                    hora actual está fuera de rango, el servidor forzará{" "}
+                    <code>isOpen = false</code>.
+                  </span>
+                </div>
+              </label>
             </div>
           </div>
 

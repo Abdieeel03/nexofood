@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { loginAction } from "@/lib/auth-actions";
 import { isSafeInternalRedirect } from "@/lib/auth-constants";
+import { storeKeys } from "@/modules/store/queries/keys";
 import { loginRequestSchema, type LoginRequest } from "@/schemas/auth.schema";
 
 export interface LoginFormProps {
@@ -27,6 +29,7 @@ export function LoginForm({
   callbackUrl,
 }: LoginFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const baseId = useId();
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -57,6 +60,7 @@ export function LoginForm({
     const result = await loginAction(data);
 
     if (result.success) {
+      await queryClient.invalidateQueries({ queryKey: storeKeys.me });
       let target = "/dashboard";
       if (isSafeInternalRedirect(callbackUrl) && callbackUrl !== "/") {
         target = callbackUrl;
@@ -64,7 +68,7 @@ export function LoginForm({
         result.user.systemRole === "SUPERADMIN" &&
         result.staffMemberships.length === 0
       ) {
-        target = "/admin/users";
+        target = "/superadmin";
       } else if (
         result.user.systemRole === "USER" &&
         result.staffMemberships.length === 0

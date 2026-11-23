@@ -140,10 +140,6 @@ export const StorefrontOrdersView: React.FC<StorefrontOrdersViewProps> = ({
         aria-label="Ruta de navegación"
         className="flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant"
       >
-        <Link href="/store" className="hover:text-primary transition-colors">
-          Buscar tienda
-        </Link>
-        <Icon name="chevron_right" size={16} />
         <Link
           href={`/store/${encodeURIComponent(slug)}`}
           className="hover:text-primary transition-colors"

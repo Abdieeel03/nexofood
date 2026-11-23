@@ -137,7 +137,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
           Boolean(product.imageUrl) && !failedThumbnails[product.id];
 
         return (
-          <div className="flex items-center gap-3 min-w-[220px] max-w-sm">
+          <div className="flex items-center gap-3 min-w-0 w-full sm:min-w-[220px] sm:max-w-sm">
             <div className="h-11 w-11 rounded-xl border border-outline-variant/80 bg-surface-container-low overflow-hidden flex items-center justify-center shrink-0">
               {hasValidImage && product.imageUrl ? (
                 <Image
@@ -199,7 +199,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
       header: "Impuesto",
       render: (product) =>
         product.taxName && product.taxRate !== null ? (
-          <div className="flex flex-col gap-0.5 text-xs">
+          <div className="flex flex-col items-end sm:items-start gap-0.5 text-xs">
             <span className="font-semibold text-on-surface tabular-nums">
               {product.taxName} ({product.taxRate.toFixed(2)}%)
             </span>
@@ -358,10 +358,10 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-outline-variant/70 bg-surface-card p-4 shadow-level-1 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
           <search
             aria-label="Filtrar productos del catálogo"
-            className="flex-1 min-w-[260px]"
+            className="w-full flex-1 min-w-0"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
               <div className="flex flex-col gap-1">
@@ -479,13 +479,14 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
             </div>
           </search>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0 self-end">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto lg:self-end">
             {hasActiveFilters && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={resetFilters}
+                className="w-full sm:w-auto"
               >
                 Limpiar filtros
               </Button>
@@ -501,6 +502,7 @@ export const ProductsTab: React.FC<ProductsTabProps> = ({
                   setEditingProductId(null);
                   setFormOpen(true);
                 }}
+                className="w-full sm:w-auto"
               >
                 Nuevo producto
               </Button>

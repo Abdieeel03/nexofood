@@ -7,3 +7,4 @@ export * from "./cart.schema";
 export * from "./order.schema";
 export * from "./payment.schema";
 export * from "./tracking.schema";
+export * from "./notification.schema";

@@ -51,7 +51,9 @@ export const config = {
     "/customers/:path*",
     "/onboarding/:path*",
     "/account/:path*",
+    "/notifications/:path*",
     "/admin/:path*",
+    "/superadmin/:path*",
     "/settings/:path*",
   ],
 };

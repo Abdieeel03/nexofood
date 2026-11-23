@@ -12,7 +12,11 @@ import { Pagination } from "@/components/ui/Pagination";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrencyPEN, formatDateTime } from "@/lib/format";
 import { PAYMENT_STATUS_META } from "@/lib/order-state-machine";
-import { canManageMp, canViewPaymentsAudit } from "@/lib/permissions";
+import {
+  canManageMp,
+  canViewPaymentsAudit,
+  getDefaultRoleHomePath,
+} from "@/lib/permissions";
 import { EmptyState } from "@/modules/app/components/EmptyState";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import {
@@ -181,6 +185,7 @@ export function PaymentsSettingsView({
   }
 
   if (!canAudit) {
+    const fallbackHref = getDefaultRoleHomePath(activeRole, systemRole);
     return (
       <div className="max-w-2xl space-y-4">
         <Alert variant="warning" title="Acceso restringido">
@@ -188,10 +193,10 @@ export function PaymentsSettingsView({
           restaurante.
         </Alert>
         <Link
-          href="/dashboard"
+          href={fallbackHref}
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary"
         >
-          Volver al inicio
+          Volver a mi inicio
         </Link>
       </div>
     );

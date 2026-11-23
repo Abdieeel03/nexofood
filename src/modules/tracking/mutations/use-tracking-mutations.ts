@@ -1,14 +1,16 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { sendDriverOrderLocation } from "@/modules/orders/services/driver.service";
 import type {
   DeliveryTrackingResponse,
   DriverLocationUpdateRequest,
 } from "@/schemas/tracking.schema";
 import { trackingKeys } from "../queries/keys";
-import { sendDriverLocation } from "../services/tracking.service";
 
-export function useSendDriverLocationMutation(tenantId: string | undefined) {
+export function useSendDriverOrderLocationMutation(
+  tenantId: string | undefined
+) {
   const queryClient = useQueryClient();
 
   return useMutation<
@@ -20,12 +22,12 @@ export function useSendDriverLocationMutation(tenantId: string | undefined) {
       if (!tenantId) {
         return Promise.reject(new Error("No hay restaurante activo seleccionado."));
       }
-      return sendDriverLocation(tenantId, orderId, location);
+      return sendDriverOrderLocation(tenantId, orderId, location);
     },
     onSuccess: (tracking) => {
       if (!tenantId) return;
       queryClient.setQueryData(
-        trackingKeys.order(tenantId, tracking.orderId, false),
+        trackingKeys.driverOrder(tenantId, tracking.orderId, false),
         tracking
       );
       queryClient.invalidateQueries({

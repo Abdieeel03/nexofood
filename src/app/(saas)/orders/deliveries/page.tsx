@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Icon } from "@/components/ui/Icon";
-import { canViewDeliveries } from "@/lib/permissions";
+import { canViewDeliveries, getDefaultRoleHomePath } from "@/lib/permissions";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { DeliveriesBoard } from "@/modules/orders/components/DeliveriesBoard";
 
@@ -42,16 +42,17 @@ export default function OrdersDeliveriesPage() {
   }
 
   if (!canViewDeliveries(activeRole, systemRole)) {
+    const fallbackHref = getDefaultRoleHomePath(activeRole, systemRole);
     return (
       <Alert
         variant="danger"
         title="Acceso restringido"
         action={
           <Link
-            href="/orders"
+            href={fallbackHref}
             className="inline-flex items-center gap-1.5 text-xs font-bold underline"
           >
-            Volver a Pedidos
+            Ir a mi vista operativa
           </Link>
         }
       >

@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Icon } from "@/components/ui/Icon";
-import { canManageMembers } from "@/lib/permissions";
+import { canManageMembers, getDefaultRoleHomePath } from "@/lib/permissions";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { MembersDirectory } from "@/modules/employees/components/MembersDirectory";
 
@@ -47,16 +47,17 @@ export default function EmployeesPage() {
   }
 
   if (!canManageMembers(activeRole, systemRole)) {
+    const fallbackHref = getDefaultRoleHomePath(activeRole, systemRole);
     return (
       <Alert
         variant="danger"
         title="Acceso restringido"
         action={
           <Link
-            href="/orders"
+            href={fallbackHref}
             className="inline-flex items-center gap-1.5 text-xs font-bold underline"
           >
-            Volver a Pedidos
+            Volver a mi inicio
           </Link>
         }
       >

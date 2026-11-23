@@ -38,7 +38,7 @@ const ALL_STAFF_ROLES: TenantStaffRole[] = [
 const ROLE_DESCRIPTIONS: Record<TenantStaffRole, string> = {
   OWNER: "Control total del restaurante, pagos, configuración y equipo.",
   ADMIN: "Gestión de pedidos, catálogo, clientes, cocineros y repartidores.",
-  COCINERO: "Consulta de pedidos, cola KDS y avance a preparación / listo.",
+  COCINERO: "Acceso exclusivo a cola de cocina (KDS) y avance a preparación / listo.",
   REPARTIDOR: "Consulta de sus entregas asignadas, entrega y telemetría GPS.",
 };
 

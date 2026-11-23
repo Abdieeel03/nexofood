@@ -224,8 +224,8 @@ export function getAllowedNextStatuses(
 
   if (actorRole === "REPARTIDOR") {
     if (
-      order.deliveryStaffId &&
-      actorUserId &&
+      !order.deliveryStaffId ||
+      !actorUserId ||
       order.deliveryStaffId !== actorUserId
     ) {
       return [];

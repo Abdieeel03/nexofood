@@ -5,6 +5,8 @@ export * from "./tenant.schema";
 export * from "./catalog.schema";
 export * from "./cart.schema";
 export * from "./order.schema";
+export * from "./kitchen.schema";
+export * from "./driver.schema";
 export * from "./payment.schema";
 export * from "./tracking.schema";
 export * from "./notification.schema";

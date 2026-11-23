@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useId, useState } from "react";
-import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { Alert, Button, Dialog, Icon } from "@/components/ui";
+import { Alert, Button, Dialog } from "@/components/ui";
+import { ImageUploadField } from "@/components/ui/ImageUploadField";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrencyPEN } from "@/lib/format";
 import type { ProductRequest } from "@/schemas/catalog.schema";
@@ -116,7 +116,6 @@ const ProductFormInner: React.FC<ProductFormInnerProps> = ({
   const isEditing = Boolean(productId);
   const formId = useId();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [failedPreviewUrl, setFailedPreviewUrl] = useState<string | null>(null);
 
   const detailQuery = useProductDetailQuery(tenantId, productId);
   const categoriesQuery = useCategoriesQuery(tenantId, { activeOnly: false });
@@ -161,13 +160,6 @@ const ProductFormInner: React.FC<ProductFormInnerProps> = ({
       });
     }
   }, [isEditing, detailQuery.data, reset]);
-
-  const watchedImageUrl = useWatch({ control, name: "imageUrl" });
-  const previewUrl = watchedImageUrl?.trim() ?? "";
-  const showPreviewImage =
-    previewUrl.length > 0 &&
-    /^https?:\/\/.+/i.test(previewUrl) &&
-    failedPreviewUrl !== previewUrl;
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
@@ -436,57 +428,24 @@ const ProductFormInner: React.FC<ProductFormInnerProps> = ({
         </CatalogFormField>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 items-start">
-        <CatalogFormField
-          id={`${formId}-imageUrl`}
-          label="URL de imagen (opcional)"
-          error={errors.imageUrl?.message}
-          helperText="Enlace directo a la fotografía del plato (máximo 500 caracteres)."
-        >
-          <input
+      <Controller
+        control={control}
+        name="imageUrl"
+        render={({ field }) => (
+          <ImageUploadField
             id={`${formId}-imageUrl`}
-            type="url"
-            maxLength={500}
-            autoCorrect="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            placeholder="https://storage.nexofood.lat/products/plato.png"
-            className={inputClassName(Boolean(errors.imageUrl))}
-            {...getFieldAriaProps(
-              `${formId}-imageUrl`,
-              errors.imageUrl?.message,
-              true
-            )}
-            {...register("imageUrl")}
+            label="Imagen del plato (opcional)"
+            helperText="Sube una imagen PNG, JPG o WebP (máximo 5 MB) y recórtala antes de guardar."
+            value={field.value ?? ""}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.imageUrl?.message}
+            placeholder="https://..."
+            target="DISH_IMAGE"
+            tenantId={tenantId}
           />
-        </CatalogFormField>
-
-        <div className="sm:pt-7">
-          <div className="h-20 w-20 rounded-xl border border-outline-variant bg-surface-container-low overflow-hidden flex items-center justify-center shrink-0">
-            {showPreviewImage ? (
-              <Image
-                src={previewUrl}
-                alt="Vista previa del producto"
-                width={80}
-                height={80}
-                unoptimized
-                className="h-full w-full object-cover"
-                onError={() => setFailedPreviewUrl(previewUrl)}
-              />
-            ) : (
-              <Icon
-                name={
-                  failedPreviewUrl === previewUrl && previewUrl
-                    ? "broken_image"
-                    : "lunch_dining"
-                }
-                size={28}
-                className="text-on-surface-variant/65"
-              />
-            )}
-          </div>
-        </div>
-      </div>
+        )}
+      />
 
       <div className="flex items-start gap-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/40 p-4">
         <input

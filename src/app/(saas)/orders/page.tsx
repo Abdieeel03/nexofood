@@ -12,6 +12,7 @@ import {
   canViewKds,
   canViewLiveTracking,
   canViewOrders,
+  getDefaultRoleHomePath,
 } from "@/lib/permissions";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { CancelOrderDialog } from "@/modules/orders/components/CancelOrderDialog";
@@ -119,10 +120,22 @@ export default function OrdersPage() {
   }
 
   if (!hasAccess) {
+    const homeHref = getDefaultRoleHomePath(activeRole, systemRole);
     return (
-      <Alert variant="danger" title="Acceso restringido">
-        Tu cuenta no tiene permisos de staff para consultar los pedidos de{" "}
-        <strong>{activeTenant.name}</strong>.
+      <Alert
+        variant="danger"
+        title="Acceso restringido"
+        action={
+          <Link
+            href={homeHref}
+            className="inline-flex items-center gap-1.5 text-xs font-bold underline"
+          >
+            Ir a mi vista operativa
+          </Link>
+        }
+      >
+        La gestión general de pedidos de <strong>{activeTenant.name}</strong>{" "}
+        está restringida a propietarios y administradores.
       </Alert>
     );
   }

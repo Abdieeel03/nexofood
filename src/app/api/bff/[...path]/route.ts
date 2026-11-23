@@ -209,6 +209,7 @@ async function handleProxyRequest(
       headers: buildForwardHeaders(request, accessToken),
       body: bodyPayload,
       cache: "no-store",
+      signal: request.signal,
     });
 
     // Ante 401 del backend con refresh token disponible, renovar una sola vez en single-flight y reintentar
@@ -227,6 +228,7 @@ async function handleProxyRequest(
           headers: buildForwardHeaders(request, accessToken),
           body: bodyPayload,
           cache: "no-store",
+          signal: request.signal,
         });
       } catch (refreshError) {
         if (refreshError instanceof ApiError && refreshError.status === 429) {
@@ -250,6 +252,9 @@ async function handleProxyRequest(
       }
     }
   } catch {
+    if (request.signal.aborted) {
+      return new NextResponse(null, { status: 499 });
+    }
     return NextResponse.json(
       {
         message: "No se pudo conectar con el servidor de NexoFood",
@@ -264,9 +269,24 @@ async function handleProxyRequest(
   }
 
   const resHeaders = copyBackendResponseHeaders(backendRes);
+  const isEventStream =
+    backendRes.ok &&
+    backendRes.headers
+      .get("content-type")
+      ?.toLowerCase()
+      .includes("text/event-stream") &&
+    backendRes.body !== null;
 
   let nextRes: NextResponse;
-  if (
+  if (isEventStream) {
+    resHeaders.set("Cache-Control", "no-cache, no-transform");
+    resHeaders.set("X-Accel-Buffering", "no");
+    resHeaders.set("Connection", "keep-alive");
+    nextRes = new NextResponse(backendRes.body, {
+      status: backendRes.status,
+      headers: resHeaders,
+    });
+  } else if (
     backendRes.status === 204 ||
     backendRes.status === 205 ||
     backendRes.status === 304

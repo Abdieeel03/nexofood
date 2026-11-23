@@ -27,13 +27,16 @@ export function useNotificationsQuery(
   });
 }
 
-export function useUnreadNotificationCountQuery(enabled = true) {
+export function useUnreadNotificationCountQuery(
+  enabled = true,
+  sseConnected = false
+) {
   return useQuery<UnreadNotificationCountResponse, Error>({
     queryKey: notificationsKeys.unreadCount(),
     queryFn: ({ signal }) => fetchUnreadNotificationCount(signal),
     enabled,
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: sseConnected ? false : 30_000,
   });
 }
 

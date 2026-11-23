@@ -34,6 +34,7 @@ NexoFood implementa una arquitectura híbrida **Server-First + BFF Proxy** sobre
      - Rechaza explícitamente rutas hacia `webhooks/` (`403`) y secuencias `..` de *path traversal* (`400`).
      - Reenvía hacia `${SERVER_API_BASE_URL}/${path.join("/")}${search}` adjuntando `Authorization: Bearer <accessToken>` desde la cookie `nexofood_access_token`.
      - Preserva headers de respuesta críticos como `Retry-After` y `X-Rate-Limit-Remaining`.
+     - Reenvía flujos SSE (`text/event-stream`) sin bufferizar (`backendRes.body`) propagando `request.signal` para cerrar la conexión en el backend al desconectar el cliente.
      - Maneja cuerpos vacíos / `204 No Content` de forma segura.
    - **Cookies `httpOnly` (`src/lib/auth-cookies.ts`):**
      - `nexofood_access_token`: `httpOnly: true`, `sameSite: "lax"`, `secure: NODE_ENV === "production"`, `path: "/"`, `maxAge: expiresIn` (default `900` s).
@@ -287,6 +288,20 @@ Los siguientes endpoints existen únicamente para la comunicación **Mercado Pag
 | 98 | `GET` | `/tenants/{tenantId}/tracking/active` | `OWNER`, `ADMIN`, `SUPERADMIN` | `200` `ApiResponse<List<DeliveryTrackingResponse>>` |
 | 99 | `GET` | `/tenants/{tenantId}/orders/{orderId}/tracking` | Miembro activo o `SUPERADMIN` | `200` `ApiResponse<DeliveryTrackingResponse>` *(con `includeHistory=true` devuelve `routeHistory`)* |
 | 100 | `PUT` | `/tenants/{tenantId}/orders/{orderId}/tracking/location` | `REPARTIDOR` asignado, `OWNER`, `ADMIN`, `SUPERADMIN` | `200` `ApiResponse<DeliveryTrackingResponse>` |
+
+### 4.9. Módulo 9: Notification & Invitations (9 endpoints)
+
+| # | Método | Ruta (`/api/v1/...`) | Acceso / Rol | Éxito & Envelope |
+| --- | --- | --- | --- | --- |
+| 101 | `GET` | `/notifications` | Autenticado | `200` `ApiResponse<PageResponse<NotificationResponse>>` |
+| 102 | `GET` | `/notifications/unread-count` | Autenticado | `200` `ApiResponse<UnreadNotificationCountResponse>` |
+| 103 | `GET` | `/notifications/stream` | Autenticado (`Bearer` o `?ticket=`) | `200` `text/event-stream` *(eventos `connected`, `notification`, `unread-count`)* |
+| 104 | `POST` | `/notifications/stream-ticket` | Autenticado | `201`/`200` `ApiResponse<NotificationStreamTicketResponse>` |
+| 105 | `PATCH` | `/notifications/{id}/read` | Destinatario | `200` `ApiResponse<NotificationResponse>` |
+| 106 | `PATCH` | `/notifications/read-all` | Autenticado | `200` `ApiResponse<MarkAllNotificationsReadResponse>` |
+| 107 | `POST` | `/notifications/{id}/respond` | Destinatario (`STAFF_INVITATION`) | `200` `ApiResponse<NotificationResponse>` |
+| 108 | `GET` | `/invitations` | Autenticado | `200` `ApiResponse<List<TenantMemberResponse>>` |
+| 109 | `POST` | `/invitations/{invitationId}/respond` | Usuario invitado | `200` `ApiResponse<TenantMemberResponse>` |
 
 > **Nota sobre elementos preparados internamente en backend (sin endpoint público en v1):** `OrderCreateRequest` / `OrderItemRequest`, `TenantCustomerUpdateRequest` (las mutaciones van separadas en `/block`, `/notes`, `/points`), y búsqueda/listado público global de restaurantes (acceso exclusivo por `slug`).
 

@@ -257,7 +257,7 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
 
         <div className="px-5 sm:px-8 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 sm:-mt-12 relative">
-            <div className="flex items-end gap-4">
+            <div className="flex items-end gap-4 min-w-0">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-surface-card border-4 border-surface-card shadow-level-2 overflow-hidden flex items-center justify-center shrink-0">
                 {tenant.logoUrl ? (
                   <Image
@@ -274,9 +274,9 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
                 )}
               </div>
 
-              <div className="pt-2 space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">
+              <div className="pt-2 space-y-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight truncate">
                     {tenant.name}
                   </h1>
                   <Badge
@@ -285,57 +285,56 @@ export const StorefrontView: React.FC<StorefrontViewProps> = ({
                   >
                     {isStoreOpen ? "Abierto" : "Cerrado"}
                   </Badge>
-                  {scheduleText && (
-                    <Badge variant="info" size="sm">
-                      Horario: {scheduleText}
-                    </Badge>
-                  )}
                 </div>
                 <p className="text-xs font-medium text-on-surface-variant">
                   /{tenant.slug}
                 </p>
               </div>
             </div>
-
-            <dl className="flex flex-wrap items-center gap-4 text-xs font-semibold text-on-surface-variant">
-              {scheduleText && (
-                <div className="flex items-center gap-1.5">
-                  <Icon
-                    name="schedule"
-                    size={16}
-                    className="text-primary"
-                  />
-                  <dt className="sr-only">Horario de atención</dt>
-                  <dd className="tabular-nums">{scheduleText}</dd>
-                </div>
-              )}
-              {tenant.address && (
-                <div className="flex items-center gap-1.5">
-                  <Icon
-                    name="location_on"
-                    size={16}
-                    className="text-primary"
-                  />
-                  <dt className="sr-only">Dirección</dt>
-                  <dd>{tenant.address}</dd>
-                </div>
-              )}
-              {tenant.phone && (
-                <div className="flex items-center gap-1.5">
-                  <Icon name="call" size={16} className="text-primary" />
-                  <dt className="sr-only">Teléfono</dt>
-                  <dd className="tabular-nums">{tenant.phone}</dd>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5">
-                <Icon name="two_wheeler" size={16} className="text-primary" />
-                <dt className="sr-only">Envío base</dt>
-                <dd className="tabular-nums">
-                  Envío base: {formatCurrencyPEN(tenant.defaultDeliveryFee)}
-                </dd>
-              </div>
-            </dl>
           </div>
+
+          <dl className="mt-5 pt-4 border-t border-outline-variant/40 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-xs font-semibold text-on-surface-variant">
+            {scheduleText && (
+              <div className="inline-flex items-center gap-1.5 shrink-0">
+                <Icon
+                  name="schedule"
+                  size={16}
+                  className="text-primary shrink-0"
+                />
+                <dt className="sr-only">Horario de atención</dt>
+                <dd className="tabular-nums text-on-surface">{scheduleText}</dd>
+              </div>
+            )}
+            {tenant.address && (
+              <div className="inline-flex items-center gap-1.5 min-w-0">
+                <Icon
+                  name="location_on"
+                  size={16}
+                  className="text-primary shrink-0"
+                />
+                <dt className="sr-only">Dirección</dt>
+                <dd className="truncate">{tenant.address}</dd>
+              </div>
+            )}
+            {tenant.phone && (
+              <div className="inline-flex items-center gap-1.5 shrink-0">
+                <Icon name="call" size={16} className="text-primary shrink-0" />
+                <dt className="sr-only">Teléfono</dt>
+                <dd className="tabular-nums">{tenant.phone}</dd>
+              </div>
+            )}
+            <div className="inline-flex items-center gap-1.5 shrink-0">
+              <Icon
+                name="two_wheeler"
+                size={16}
+                className="text-primary shrink-0"
+              />
+              <dt className="sr-only">Envío base</dt>
+              <dd className="tabular-nums">
+                Envío base: {formatCurrencyPEN(tenant.defaultDeliveryFee)}
+              </dd>
+            </div>
+          </dl>
         </div>
       </section>
 

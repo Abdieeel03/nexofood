@@ -662,7 +662,6 @@ export function SuperadminShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2.5">
-            <NotificationBell centerHref="/notifications" />
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary-fixed-dim bg-mint-subtle px-2.5 py-1 text-xs font-bold text-on-primary-fixed">
               <Icon name="verified_user" size={14} className="text-primary" />
               <span>SUPERADMIN</span>
@@ -674,6 +673,7 @@ export function SuperadminShell({ children }: { children: React.ReactNode }) {
               <Icon name="store" size={18} className="text-primary shrink-0" />
               <span>Ir al Backoffice</span>
             </Link>
+            <NotificationBell centerHref="/notifications" />
           </div>
         </header>
 

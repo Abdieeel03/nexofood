@@ -420,19 +420,8 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
             href: "/onboarding",
             icon: "add_business",
           },
-          {
-            label: "Notificaciones e Invitaciones",
-            href: "/notifications",
-            icon: "notifications",
-          },
         ]
-      : [
-          {
-            label: "Notificaciones",
-            href: "/notifications",
-            icon: "notifications",
-          },
-        ];
+      : [];
 
   const isRouteActive = (item: NavItem) => {
     if (!pathname) return false;
@@ -543,12 +532,7 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
           className="flex-1 overflow-y-auto p-3"
         >
           {renderNavSection("Restaurante", tenantNavItems)}
-          {renderNavSection(
-            !activeTenant && user.staffMemberships.length === 0
-              ? "Primeros pasos"
-              : "Buzón Personal",
-            onboardingNavItems
-          )}
+          {renderNavSection("Primeros pasos", onboardingNavItems)}
         </nav>
       </div>
 

@@ -22,6 +22,7 @@ import {
   SUBSCRIPTION_STATUS_META,
 } from "@/lib/order-state-machine";
 import {
+  canManageSettings,
   canViewCatalog,
   canViewDeliveries,
   canViewKds,
@@ -86,6 +87,8 @@ export function DashboardView() {
     hasTenant && canViewLiveTracking(activeRole, systemRole);
   const allowPaymentsAudit =
     hasTenant && canViewPaymentsAudit(activeRole, systemRole);
+  const allowManageSettings =
+    hasTenant && canManageSettings(activeRole, systemRole);
   const allowCatalog = hasTenant && canViewCatalog(activeRole, systemRole);
   const isOwner =
     hasTenant &&
@@ -447,7 +450,13 @@ export function DashboardView() {
         }}
       />
 
-      <WelcomeBanner tenant={activeTenant} mpConnected={mpConnected} />
+      <WelcomeBanner
+        tenant={activeTenant}
+        mpConnected={mpConnected}
+        activeRole={activeRole}
+        systemRole={systemRole}
+        showMpStatus={allowPaymentsAudit}
+      />
 
       {/* Alertas operativas */}
       <div className="space-y-3">
@@ -456,15 +465,19 @@ export function DashboardView() {
             variant="warning"
             title="Restaurante pausado"
             action={
-              <Link
-                href="/dashboard/settings"
-                className="inline-flex items-center gap-1.5 text-xs font-bold underline"
-              >
-                Revisar configuración
-              </Link>
+              allowManageSettings ? (
+                <Link
+                  href="/dashboard/settings"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold underline"
+                >
+                  Revisar configuración
+                </Link>
+              ) : undefined
             }
           >
-            El storefront público no está aceptando nuevos pedidos actualmente.
+            {allowManageSettings
+              ? "El storefront público no está aceptando nuevos pedidos actualmente."
+              : "El restaurante se encuentra pausado temporalmente y no está recibiendo nuevos pedidos desde el storefront."}
           </Alert>
         )}
 
@@ -473,17 +486,19 @@ export function DashboardView() {
             variant="info"
             title="Restaurante cerrado en este momento"
             action={
-              <Link
-                href="/dashboard/settings"
-                className="inline-flex items-center gap-1.5 text-xs font-bold underline"
-              >
-                Ajustar horario
-              </Link>
+              allowManageSettings ? (
+                <Link
+                  href="/dashboard/settings"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold underline"
+                >
+                  Ajustar horario
+                </Link>
+              ) : undefined
             }
           >
-            Tu restaurante está fuera de su horario de atención (o marcado como
-            cerrado). Los comensales no podrán confirmar nuevos pedidos en el
-            checkout mientras esté cerrado.
+            {allowManageSettings
+              ? "Tu restaurante está fuera de su horario de atención (o marcado como cerrado). Los comensales no podrán confirmar nuevos pedidos en el checkout mientras esté cerrado."
+              : "El restaurante se encuentra fuera de su horario de atención o cerrado temporalmente. No ingresarán nuevos pedidos desde el storefront hasta la apertura."}
           </Alert>
         )}
 

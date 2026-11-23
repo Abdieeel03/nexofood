@@ -86,16 +86,9 @@ export function Topbar({
               {activeTenant.name}
             </span>
             <Badge
-              variant={activeTenant.isActive ? "success" : "warning"}
-              dot
-              size="sm"
-            >
-              {activeTenant.isActive ? "Activo" : "Inactivo"}
-            </Badge>
-            <Badge
               variant={
                 activeTenant.isActive && activeTenant.isOpen !== false
-                  ? "primary"
+                  ? "success"
                   : "danger"
               }
               dot
@@ -128,17 +121,9 @@ export function Topbar({
         )}
       </div>
 
-      {/* Right section: optional tenant switcher + notifications + storefront link */}
+      {/* Right section: optional tenant switcher + storefront link + notifications */}
       <div className="flex items-center gap-2.5">
         {actions}
-
-        <NotificationBell
-          centerHref="/notifications"
-          onInvitationAccepted={async () => {
-            await refreshUser();
-            await refreshTenant();
-          }}
-        />
 
         {user.staffMemberships.length > 1 && (
           <div className="flex items-center gap-2">
@@ -198,6 +183,14 @@ export function Topbar({
           <Icon name="storefront" size={18} className="text-primary shrink-0" />
           <span>Ir al Storefront</span>
         </Link>
+
+        <NotificationBell
+          centerHref="/notifications"
+          onInvitationAccepted={async () => {
+            await refreshUser();
+            await refreshTenant();
+          }}
+        />
       </div>
 
       {switchError && (

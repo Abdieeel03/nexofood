@@ -282,22 +282,16 @@ export function GeneralSettingsView() {
               Estado operativo del storefront
             </h2>
             <Badge
-              variant={activeTenant.isActive ? "success" : "warning"}
-              dot
-            >
-              {activeTenant.isActive ? "Operativo" : "Pausado"}
-            </Badge>
-            <Badge
               variant={
                 activeTenant.isActive && activeTenant.isOpen
-                  ? "primary"
+                  ? "success"
                   : "danger"
               }
               dot
             >
               {activeTenant.isActive && activeTenant.isOpen
-                ? "Abierto al público"
-                : "Cerrado al público"}
+                ? "Abierto"
+                : "Cerrado"}
             </Badge>
             {formatScheduleRange(
               activeTenant.openingTime,

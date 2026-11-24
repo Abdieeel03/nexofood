@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
-import { getApiErrorMessage } from "@/lib/api-client";
+import { Button } from "@/components/ui/Button";
+import { apiClient, getApiErrorMessage } from "@/lib/api-client";
+import { tenantResponseSchema, type TenantResponse } from "@/schemas/tenant.schema";
 import { formatScheduleRange } from "@/lib/format";
 import { TENANT_STAFF_ROLE_META } from "@/lib/order-state-machine";
 import { canAccessGlobalAdmin } from "@/lib/permissions";
@@ -37,6 +39,33 @@ export function Topbar({
   } = useSessionTenant();
 
   const [switchError, setSwitchError] = useState<string | null>(null);
+  const [togglingOpen, setTogglingOpen] = useState(false);
+
+  const canToggleOpen =
+    Boolean(activeTenant?.isActive) && Boolean(user?.id) && activeTenant?.ownerId === user?.id;
+  const isCurrentlyOpen =
+    Boolean(activeTenant?.isActive) && activeTenant?.isOpen !== false;
+
+  const handleToggleOpen = async () => {
+    if (!activeTenant || togglingOpen) return;
+    setTogglingOpen(true);
+    setSwitchError(null);
+    try {
+      await apiClient.put<TenantResponse>(
+        `/tenants/${encodeURIComponent(activeTenant.id)}`,
+        {
+          name: activeTenant.name,
+          isOpen: !isCurrentlyOpen,
+        },
+        { schema: tenantResponseSchema }
+      );
+      await refreshTenant();
+    } catch (err) {
+      setSwitchError(getApiErrorMessage(err));
+    } finally {
+      setTogglingOpen(false);
+    }
+  };
 
   const handleTenantChange = async (
     event: React.ChangeEvent<HTMLSelectElement>
@@ -86,18 +115,33 @@ export function Topbar({
               {activeTenant.name}
             </span>
             <Badge
-              variant={
-                activeTenant.isActive && activeTenant.isOpen !== false
-                  ? "success"
-                  : "danger"
-              }
+              variant={isCurrentlyOpen ? "success" : "danger"}
               dot
               size="sm"
             >
-              {activeTenant.isActive && activeTenant.isOpen !== false
-                ? "Abierto"
-                : "Cerrado"}
+              {isCurrentlyOpen ? "Abierto" : "Cerrado"}
             </Badge>
+            {canToggleOpen && (
+              <Button
+                type="button"
+                size="sm"
+                variant={isCurrentlyOpen ? "outline" : "primary"}
+                disabled={togglingOpen}
+                onClick={handleToggleOpen}
+                className="h-7 px-2.5 text-xs"
+                title={
+                  isCurrentlyOpen
+                    ? "Cerrar restaurante manualmente"
+                    : "Abrir restaurante manualmente"
+                }
+              >
+                {togglingOpen
+                  ? "..."
+                  : isCurrentlyOpen
+                    ? "Cerrar"
+                    : "Abrir"}
+              </Button>
+            )}
             {formatScheduleRange(
               activeTenant.openingTime,
               activeTenant.closingTime

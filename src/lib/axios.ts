@@ -35,6 +35,67 @@ export function parseRetryAfterSeconds(headerValue: unknown): number | undefined
   return undefined;
 }
 
+const GENERIC_AXIOS_MESSAGE_RE = /^Request failed with status code \d{3}$/i;
+
+function extractMessageFromErrorPayload(data: unknown): string | undefined {
+  let payload = data;
+
+  if (typeof payload === "string") {
+    const trimmed = payload.trim();
+    if (!trimmed) return undefined;
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        payload = JSON.parse(trimmed);
+      } catch {
+        return trimmed;
+      }
+    } else {
+      return trimmed;
+    }
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return undefined;
+  }
+
+  const parsedError = errorResponseSchema.safeParse(payload);
+  if (parsedError.success && parsedError.data.message.trim().length > 0) {
+    return parsedError.data.message.trim();
+  }
+
+  const record = payload as Record<string, unknown>;
+
+  if (typeof record.message === "string" && record.message.trim().length > 0) {
+    return record.message.trim();
+  }
+
+  if (typeof record.detail === "string" && record.detail.trim().length > 0) {
+    return record.detail.trim();
+  }
+
+  if (Array.isArray(record.errors) && record.errors.length > 0) {
+    const first = record.errors[0];
+    if (typeof first === "string" && first.trim().length > 0) {
+      return first.trim();
+    }
+    if (
+      first &&
+      typeof first === "object" &&
+      "message" in first &&
+      typeof (first as { message: unknown }).message === "string" &&
+      (first as { message: string }).message.trim().length > 0
+    ) {
+      return (first as { message: string }).message.trim();
+    }
+  }
+
+  if (typeof record.error === "string" && record.error.trim().length > 0) {
+    return record.error.trim();
+  }
+
+  return undefined;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -56,27 +117,8 @@ export class ApiError extends Error {
       error.response?.headers?.["retry-after"]
     );
 
-    const parsedError = errorResponseSchema.safeParse(data);
-    let message = error.message;
-
-    if (parsedError.success && parsedError.data.message.trim().length > 0) {
-      message = parsedError.data.message;
-    } else if (
-      data &&
-      typeof data === "object" &&
-      "message" in data &&
-      typeof (data as { message: unknown }).message === "string" &&
-      (data as { message: string }).message.trim().length > 0
-    ) {
-      message = (data as { message: string }).message;
-    } else if (
-      data &&
-      typeof data === "object" &&
-      "error" in data &&
-      typeof (data as { error: unknown }).error === "string"
-    ) {
-      message = (data as { error: string }).error;
-    }
+    const extracted = extractMessageFromErrorPayload(data);
+    const message = extracted || error.message;
 
     return new ApiError(status, statusText, data, message, retryAfter);
   }
@@ -90,12 +132,37 @@ export function getApiErrorMessage(
   error: unknown,
   fallback = "Ocurrió un error inesperado. Intenta nuevamente."
 ): string {
+  if (axios.isAxiosError(error)) {
+    const extracted = extractMessageFromErrorPayload(error.response?.data);
+    if (extracted) return extracted;
+    if (error.message && !GENERIC_AXIOS_MESSAGE_RE.test(error.message.trim())) {
+      return error.message;
+    }
+    return fallback;
+  }
+
   if (error instanceof ApiError) {
-    return error.message || fallback;
+    const extracted = extractMessageFromErrorPayload(error.data);
+    if (extracted) return extracted;
+    if (error.message && !GENERIC_AXIOS_MESSAGE_RE.test(error.message.trim())) {
+      return error.message;
+    }
+    return fallback;
   }
+
+  if (error && typeof error === "object" && "response" in error) {
+    const response = (error as { response?: { data?: unknown } }).response;
+    const extracted = extractMessageFromErrorPayload(response?.data);
+    if (extracted) return extracted;
+  }
+
   if (error instanceof Error) {
-    return error.message || fallback;
+    if (error.message && !GENERIC_AXIOS_MESSAGE_RE.test(error.message.trim())) {
+      return error.message;
+    }
+    return fallback;
   }
+
   return fallback;
 }
 

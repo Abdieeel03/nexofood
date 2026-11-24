@@ -10,10 +10,12 @@ import {
   markAllNotificationsReadResponseSchema,
   notificationInvitationDecisionRequestSchema,
   notificationResponseSchema,
+  notificationStreamTicketResponseSchema,
   unreadNotificationCountResponseSchema,
   type MarkAllNotificationsReadResponse,
   type NotificationInvitationDecisionRequest,
   type NotificationResponse,
+  type NotificationStreamTicketResponse,
   type UnreadNotificationCountResponse,
 } from "@/schemas/notification.schema";
 import {
@@ -59,6 +61,23 @@ export async function fetchUnreadNotificationCount(
     "/notifications/unread-count",
     {
       schema: unreadNotificationCountResponseSchema,
+      signal,
+    }
+  );
+}
+
+/**
+ * Solicita un ticket temporal de un solo uso para autenticar el stream SSE
+ * (`POST /notifications/stream-ticket`).
+ */
+export async function fetchNotificationStreamTicket(
+  signal?: AbortSignal
+): Promise<NotificationStreamTicketResponse> {
+  return apiClient.post<NotificationStreamTicketResponse>(
+    "/notifications/stream-ticket",
+    undefined,
+    {
+      schema: notificationStreamTicketResponseSchema,
       signal,
     }
   );

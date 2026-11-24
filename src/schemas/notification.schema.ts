@@ -50,3 +50,21 @@ export const markAllNotificationsReadResponseSchema = z.object({
 export type MarkAllNotificationsReadResponse = z.infer<
   typeof markAllNotificationsReadResponseSchema
 >;
+
+export const notificationStreamTicketResponseSchema = z.object({
+  ticket: z.string().min(1),
+  expiresInSeconds: z.number().int().nonnegative(),
+  expiresAt: z.string(),
+});
+export type NotificationStreamTicketResponse = z.infer<
+  typeof notificationStreamTicketResponseSchema
+>;
+
+export const notificationSseConnectedEventSchema = z.object({
+  status: z.string(),
+  unreadCount: z.number().int().nonnegative(),
+  connectedAt: z.string(),
+});
+export type NotificationSseConnectedEvent = z.infer<
+  typeof notificationSseConnectedEventSchema
+>;

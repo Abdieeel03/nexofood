@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
@@ -23,6 +24,7 @@ import {
   useNotificationsQuery,
   useUnreadNotificationCountQuery,
 } from "../queries/use-notifications-queries";
+import { useNotificationStream } from "../hooks/use-notification-stream";
 
 export interface NotificationBellProps {
   enabled?: boolean;
@@ -38,9 +40,30 @@ export function NotificationBell({
   const [isOpen, setIsOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [liveToast, setLiveToast] = useState<NotificationResponse | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const unreadCountQuery = useUnreadNotificationCountQuery(enabled);
+  const { isConnected: sseConnected } = useNotificationStream({
+    enabled,
+    onNotification: (notification) => {
+      if (!isOpen) {
+        setLiveToast(notification);
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (!liveToast) return;
+    const timer = window.setTimeout(() => {
+      setLiveToast(null);
+    }, 6_000);
+    return () => window.clearTimeout(timer);
+  }, [liveToast]);
+
+  const unreadCountQuery = useUnreadNotificationCountQuery(
+    enabled,
+    sseConnected
+  );
   const notificationsQuery = useNotificationsQuery(
     { page: 0, size: 8 },
     enabled && isOpen
@@ -112,6 +135,7 @@ export function NotificationBell({
         type="button"
         onClick={() => {
           setActionError(null);
+          setLiveToast(null);
           setIsOpen((prev) => !prev);
         }}
         aria-expanded={isOpen}
@@ -314,6 +338,49 @@ export function NotificationBell({
           </div>
         </div>
       )}
+
+      {!isOpen &&
+        liveToast &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-4 right-4 z-[100] w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-primary/30 bg-surface-card p-3.5 shadow-level-3 flex items-start gap-3"
+          >
+            <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-mint-subtle text-primary">
+              <Icon name="notifications_active" size={18} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-extrabold text-on-surface line-clamp-1">
+                {liveToast.title}
+              </p>
+              <p className="mt-0.5 text-xs text-on-surface-variant line-clamp-2">
+                {liveToast.message}
+              </p>
+              <div className="mt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLiveToast(null);
+                    setIsOpen(true);
+                  }}
+                  className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                >
+                  Abrir bandeja
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLiveToast(null)}
+                  className="text-xs font-semibold text-on-surface-variant hover:text-on-surface cursor-pointer"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

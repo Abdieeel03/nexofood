@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useId, useState } from "react";
+import React, { useCallback, useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -27,6 +27,10 @@ import {
 import { SUBSCRIPTION_STATUS_META } from "@/lib/order-state-machine";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { PendingInvitationsBanner } from "@/modules/notifications";
+import {
+  SubscriptionCardFormModal,
+  useSubscriptionPaymentConfig,
+} from "@/modules/subscription";
 import { cleanPayload } from "@/schemas/common.schema";
 import {
   subscriptionCheckoutResponseSchema,
@@ -66,14 +70,19 @@ export function OnboardingFlow() {
   } = useSessionTenant();
 
   const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+  const [cardModalPlan, setCardModalPlan] =
+    useState<SubscriptionPlanResponse | null>(null);
   const [step1Error, setStep1Error] = useState<string | null>(null);
   const [step1Info, setStep1Info] = useState<string | null>(null);
+  const [step2Success, setStep2Success] = useState<string | null>(null);
   const [step2Error, setStep2Error] = useState<string | null>(null);
   const [slugEditedManually, setSlugEditedManually] = useState(false);
 
   const alreadyOwnsTenant =
     activeTenant?.ownerId === user.id ||
     user.staffMemberships.some((m) => m.staffRole === "OWNER");
+
+  const paymentConfig = useSubscriptionPaymentConfig(!alreadyOwnsTenant);
 
   const subscriptionQuery = useQuery({
     queryKey: ["subscriptions", "me"],
@@ -105,6 +114,8 @@ export function OnboardingFlow() {
   const plans = plansQuery.data ?? [];
   const effectiveSelectedPlanId =
     selectedPlanId || plans[0]?.id || subscriptionQuery.data?.plan.id || "";
+  const selectedPlan =
+    plans.find((plan) => plan.id === effectiveSelectedPlanId) ?? null;
 
   const startTrialMutation = useMutation({
     mutationFn: (planId: string) =>
@@ -116,6 +127,9 @@ export function OnboardingFlow() {
     onSuccess: (sub) => {
       setStep1Error(null);
       setStep1Info(null);
+      setStep2Success(
+        `¡Prueba gratuita del plan ${sub.plan.name} activada! Ahora registra los datos de tu restaurante.`
+      );
       queryClient.setQueryData(["subscriptions", "me"], sub);
     },
     onError: (err) => {
@@ -125,25 +139,121 @@ export function OnboardingFlow() {
     },
   });
 
+  const handleCheckoutCompleted = useCallback(
+    async (
+      checkout: SubscriptionCheckoutResponse,
+      plan?: SubscriptionPlanResponse | null
+    ) => {
+      const isActivated =
+        checkout.status === "ACTIVE" ||
+        checkout.mpPreapprovalStatus?.toLowerCase() === "authorized";
+
+      if (isActivated || !checkout.initPoint) {
+        let refreshedSub: SubscriptionResponse | null = null;
+        try {
+          await queryClient.invalidateQueries({
+            queryKey: ["subscriptions", "me"],
+            refetchType: "none",
+          });
+          refreshedSub = await queryClient.fetchQuery({
+            queryKey: ["subscriptions", "me"],
+            staleTime: 0,
+            queryFn: () =>
+              apiClient.get<SubscriptionResponse>("/subscriptions/me", {
+                schema: subscriptionResponseSchema,
+              }),
+          });
+        } catch {
+          refreshedSub = null;
+        }
+
+        if (
+          isActivated &&
+          plan &&
+          (!refreshedSub ||
+            (refreshedSub.status !== "ACTIVE" &&
+              refreshedSub.status !== "TRIAL"))
+        ) {
+          const nowIso = new Date().toISOString();
+          const endIso = new Date(
+            Date.now() + plan.billingCycleDays * 24 * 60 * 60 * 1000
+          ).toISOString();
+          refreshedSub = {
+            id: checkout.subscriptionId,
+            plan,
+            userId: user.id,
+            status: "ACTIVE",
+            startDate: refreshedSub?.startDate ?? nowIso,
+            endDate: refreshedSub?.endDate ?? endIso,
+            mpPreapprovalId:
+              checkout.mpPreapprovalId ?? refreshedSub?.mpPreapprovalId ?? null,
+            mpPreapprovalStatus:
+              checkout.mpPreapprovalStatus ??
+              refreshedSub?.mpPreapprovalStatus ??
+              "authorized",
+            cancelAtPeriodEnd: false,
+            createdAt: refreshedSub?.createdAt ?? nowIso,
+            updatedAt: nowIso,
+          };
+          queryClient.setQueryData(["subscriptions", "me"], refreshedSub);
+        }
+
+        setCardModalPlan(null);
+        setStep1Error(null);
+
+        const resolvedPlanName =
+          refreshedSub?.plan.name || plan?.name || "tu plan";
+
+        if (
+          isActivated ||
+          refreshedSub?.status === "ACTIVE" ||
+          refreshedSub?.status === "TRIAL"
+        ) {
+          setStep1Info(null);
+          setStep2Success(
+            `¡Suscripción al plan ${resolvedPlanName} activada con éxito! Ya puedes registrar los datos de tu restaurante.`
+          );
+        } else {
+          setStep1Info(
+            `Tu solicitud para el plan ${resolvedPlanName} fue registrada y está pendiente de confirmación en Mercado Pago. Pulsa "Sincronizar estado" en unos segundos.`
+          );
+        }
+        return;
+      }
+
+      window.location.href = checkout.initPoint;
+    },
+    [queryClient, user.id]
+  );
+
   const startCheckoutMutation = useMutation({
-    mutationFn: (planId: string) =>
+    mutationFn: (payload: { planId: string; payerEmail?: string }) =>
       apiClient.post<SubscriptionCheckoutResponse>(
         "/subscriptions/checkout",
-        cleanPayload({ planId }),
+        cleanPayload({
+          planId: payload.planId,
+          payerEmail: payload.payerEmail,
+        }),
         { schema: subscriptionCheckoutResponseSchema }
       ),
-    onSuccess: (checkout) => {
-      window.location.assign(checkout.initPoint);
-    },
-    onError: (err) => {
-      setStep1Error(
-        getApiErrorMessage(
-          err,
-          "No se pudo generar el enlace de pago en Mercado Pago."
-        )
-      );
+    onSuccess: async (checkout, variables) => {
+      const targetPlan =
+        plans.find((plan) => plan.id === variables.planId) ?? selectedPlan;
+      await handleCheckoutCompleted(checkout, targetPlan);
     },
   });
+
+  const { mutateAsync: runRedirectCheckout } = startCheckoutMutation;
+
+  const handleFallbackRedirect = useCallback(
+    async (plan: SubscriptionPlanResponse, payerEmail?: string) => {
+      await runRedirectCheckout({
+        planId: plan.id,
+        payerEmail,
+      });
+    },
+    [runRedirectCheckout]
+  );
 
   const syncSubscriptionMutation = useMutation({
     mutationFn: () =>
@@ -391,8 +501,9 @@ export function OnboardingFlow() {
                 Elige tu plan SaaS
               </h2>
               <p className="text-sm text-on-surface-variant mt-0.5">
-                Inicia una prueba gratuita sin tarjeta o autoriza el cobro
-                recurrente con Mercado Pago.
+                {paymentConfig.cardPaymentsEnabled
+                  ? "Inicia una prueba gratuita sin tarjeta o suscríbete al instante con cualquier tarjeta de crédito o débito."
+                  : "Inicia una prueba gratuita sin tarjeta o autoriza el cobro recurrente con Mercado Pago."}
               </p>
             </div>
             {subscription && (
@@ -548,15 +659,37 @@ export function OnboardingFlow() {
                   variant="primary"
                   size="lg"
                   icon="credit_card"
-                  disabled={!effectiveSelectedPlanId}
-                  isLoading={startCheckoutMutation.isPending}
+                  disabled={!selectedPlan || paymentConfig.isLoading}
+                  isLoading={
+                    !paymentConfig.cardPaymentsEnabled &&
+                    startCheckoutMutation.isPending
+                  }
                   onClick={() => {
+                    if (!selectedPlan) return;
                     setStep1Error(null);
                     setStep1Info(null);
-                    startCheckoutMutation.mutate(effectiveSelectedPlanId);
+                    if (paymentConfig.cardPaymentsEnabled) {
+                      setCardModalPlan(selectedPlan);
+                      return;
+                    }
+                    startCheckoutMutation.mutate(
+                      { planId: selectedPlan.id },
+                      {
+                        onError: (err) => {
+                          setStep1Error(
+                            getApiErrorMessage(
+                              err,
+                              "No se pudo generar el enlace de pago en Mercado Pago."
+                            )
+                          );
+                        },
+                      }
+                    );
                   }}
                 >
-                  Suscribirse con Mercado Pago
+                  {paymentConfig.cardPaymentsEnabled
+                    ? "Pagar con tarjeta y suscribirse"
+                    : "Suscribirse con Mercado Pago"}
                 </Button>
               </div>
             </div>
@@ -581,6 +714,16 @@ export function OnboardingFlow() {
               {SUBSCRIPTION_STATUS_META[subscription.status].label}
             </Badge>
           </div>
+
+          {step2Success && (
+            <Alert
+              variant="success"
+              title="Suscripción activada"
+              onDismiss={() => setStep2Success(null)}
+            >
+              {step2Success}
+            </Alert>
+          )}
 
           {step2Error && (
             <Alert variant="danger" onDismiss={() => setStep2Error(null)}>
@@ -920,6 +1063,17 @@ export function OnboardingFlow() {
           </form>
         </div>
       )}
+
+      <SubscriptionCardFormModal
+        open={Boolean(cardModalPlan)}
+        plan={cardModalPlan}
+        publicKey={paymentConfig.publicKey}
+        defaultEmail={user.email}
+        onClose={() => setCardModalPlan(null)}
+        onCheckoutSuccess={handleCheckoutCompleted}
+        onFallbackRedirect={handleFallbackRedirect}
+        isRedirectPending={startCheckoutMutation.isPending}
+      />
     </div>
   );
 }

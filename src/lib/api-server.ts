@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import axios from "axios";
 import { z } from "zod";
 import { cleanPayload, type ApiResponse } from "@/schemas/common.schema";
 import { axiosServer, applyServerTokenInterceptor, ApiError } from "./axios";
@@ -103,7 +103,7 @@ async function executeServerRequestEnvelope<T>(
       data: validatedData,
     };
   } catch (error) {
-    if (error instanceof AxiosError) {
+    if (axios.isAxiosError(error)) {
       throw ApiError.fromAxiosError(error);
     }
     throw error;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -33,19 +33,28 @@ import {
   type SubscriptionPlanResponse,
   type SubscriptionResponse,
 } from "@/schemas/subscription.schema";
+import { useSubscriptionPaymentConfig } from "../hooks/useSubscriptionPaymentConfig";
+import { SubscriptionCardFormModal } from "./SubscriptionCardFormModal";
 
 export function SubscriptionManager() {
   const queryClient = useQueryClient();
-  const { activeRole, systemRole, refreshTenant } = useSessionTenant();
+  const { user, activeRole, systemRole, refreshTenant } = useSessionTenant();
 
   const [feedback, setFeedback] = useState<{
     type: "success" | "danger" | "info";
     message: string;
   } | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cardModalPlan, setCardModalPlan] =
+    useState<SubscriptionPlanResponse | null>(null);
+  const [redirectingPlanId, setRedirectingPlanId] = useState<string | null>(
+    null
+  );
 
   const canManageSubscription =
     !activeRole || activeRole === "OWNER" || systemRole === "SUPERADMIN";
+
+  const paymentConfig = useSubscriptionPaymentConfig(canManageSubscription);
 
   const subscriptionQuery = useQuery({
     queryKey: ["subscriptions", "me"],
@@ -133,26 +142,79 @@ export function SubscriptionManager() {
     },
   });
 
+  const handleCheckoutCompleted = useCallback(
+    async (
+      checkout: SubscriptionCheckoutResponse,
+      plan?: SubscriptionPlanResponse | null
+    ) => {
+      const isActivated =
+        checkout.status === "ACTIVE" ||
+        checkout.mpPreapprovalStatus?.toLowerCase() === "authorized";
+
+      if (isActivated || !checkout.initPoint) {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["subscriptions", "me"] }),
+          queryClient.invalidateQueries({
+            queryKey: ["subscriptions", "me", "payments"],
+          }),
+          refreshTenant(),
+        ]);
+
+        setCardModalPlan(null);
+        const planLabel = plan?.name ? ` al plan ${plan.name}` : "";
+        setFeedback(
+          isActivated
+            ? {
+                type: "success",
+                message: `¡Suscripción${planLabel} activada con éxito! Tu tarjeta quedó autorizada para cobros recurrentes.`,
+              }
+            : {
+                type: "info",
+                message: `Tu solicitud de suscripción${planLabel} fue registrada y está pendiente de confirmación en Mercado Pago. Pulsa "Sincronizar con Mercado Pago" en unos segundos.`,
+              }
+        );
+        return;
+      }
+
+      window.location.href = checkout.initPoint;
+    },
+    [queryClient, refreshTenant]
+  );
+
   const checkoutMutation = useMutation({
-    mutationFn: (planId: string) =>
+    mutationFn: (payload: { planId: string; payerEmail?: string }) =>
       apiClient.post<SubscriptionCheckoutResponse>(
         "/subscriptions/checkout",
-        cleanPayload({ planId }),
+        cleanPayload({
+          planId: payload.planId,
+          payerEmail: payload.payerEmail,
+        }),
         { schema: subscriptionCheckoutResponseSchema }
       ),
-    onSuccess: (checkout) => {
-      window.location.assign(checkout.initPoint);
+    onMutate: (variables) => {
+      setRedirectingPlanId(variables.planId);
     },
-    onError: (err) => {
-      setFeedback({
-        type: "danger",
-        message: getApiErrorMessage(
-          err,
-          "No se pudo generar el enlace de suscripción en Mercado Pago."
-        ),
-      });
+    onSuccess: async (checkout, variables) => {
+      const matchedPlan =
+        (plansQuery.data ?? []).find((p) => p.id === variables.planId) ?? null;
+      await handleCheckoutCompleted(checkout, matchedPlan);
+    },
+    onSettled: () => {
+      setRedirectingPlanId(null);
     },
   });
+
+  const { mutateAsync: runRedirectCheckout } = checkoutMutation;
+
+  const handleFallbackRedirect = useCallback(
+    async (plan: SubscriptionPlanResponse, payerEmail?: string) => {
+      await runRedirectCheckout({
+        planId: plan.id,
+        payerEmail,
+      });
+    },
+    [runRedirectCheckout]
+  );
 
   const cancelMutation = useMutation({
     mutationFn: () =>
@@ -491,15 +553,44 @@ export function SubscriptionManager() {
                       variant="primary"
                       size="sm"
                       fullWidth
-                      disabled={isAuthorizedActive}
-                      isLoading={checkoutMutation.isPending}
-                      onClick={() => checkoutMutation.mutate(plan.id)}
+                      icon={!isAuthorizedActive ? "credit_card" : undefined}
+                      disabled={isAuthorizedActive || paymentConfig.isLoading}
+                      isLoading={
+                        !paymentConfig.cardPaymentsEnabled &&
+                        checkoutMutation.isPending &&
+                        redirectingPlanId === plan.id
+                      }
+                      onClick={() => {
+                        setFeedback(null);
+                        if (paymentConfig.cardPaymentsEnabled) {
+                          setCardModalPlan(plan);
+                          return;
+                        }
+                        checkoutMutation.mutate(
+                          { planId: plan.id },
+                          {
+                            onError: (err) => {
+                              setFeedback({
+                                type: "danger",
+                                message: getApiErrorMessage(
+                                  err,
+                                  "No se pudo generar el enlace de suscripción en Mercado Pago."
+                                ),
+                              });
+                            },
+                          }
+                        );
+                      }}
                     >
-                      {sub?.status === "TRIAL"
-                        ? "Activar con Mercado Pago"
-                        : isAuthorizedActive
-                          ? "Plan ya autorizado"
-                          : "Suscribirse con Mercado Pago"}
+                      {isAuthorizedActive
+                        ? "Plan ya autorizado"
+                        : paymentConfig.cardPaymentsEnabled
+                          ? sub?.status === "TRIAL"
+                            ? "Activar con tarjeta"
+                            : "Suscribirse con tarjeta"
+                          : sub?.status === "TRIAL"
+                            ? "Activar con Mercado Pago"
+                            : "Suscribirse con Mercado Pago"}
                     </Button>
                   </div>
                 </div>
@@ -576,6 +667,18 @@ export function SubscriptionManager() {
           </Alert>
         )}
       </Dialog>
+
+      <SubscriptionCardFormModal
+        open={Boolean(cardModalPlan)}
+        plan={cardModalPlan}
+        publicKey={paymentConfig.publicKey}
+        defaultEmail={user.email}
+        isTrialUpgrade={sub?.status === "TRIAL"}
+        onClose={() => setCardModalPlan(null)}
+        onCheckoutSuccess={handleCheckoutCompleted}
+        onFallbackRedirect={handleFallbackRedirect}
+        isRedirectPending={checkoutMutation.isPending}
+      />
     </div>
   );
 }

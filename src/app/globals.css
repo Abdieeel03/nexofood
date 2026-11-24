@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @theme {
   /* Brand & Core Colors */
@@ -64,6 +65,15 @@
   --color-on-error: #ffffff;
   --color-error-container: #ffdad6;
   --color-on-error-container: #93000a;
+  --color-danger: #ba1a1a;
+
+  /* App Theme Tokens */
+  --color-surface-card: #ffffff;
+  --color-surface-base: #f4fbf4;
+  --color-subtle-slate: #64748b;
+  --color-mint-subtle: #e6f4ea;
+  --color-mint-deep: #006c49;
+  --color-tangerine-subtle: #fff0eb;
 
   /* Typography / Fonts */
   --font-sans: var(--font-plus-jakarta), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -102,7 +112,7 @@
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(14px);
     }
     to {
       opacity: 1;
@@ -112,45 +122,274 @@
 }
 
 :root {
-  /* Additional glassmorphism tokens */
   --glass-bg: rgba(255, 255, 255, 0.82);
   --glass-border: rgba(255, 255, 255, 0.4);
+  --scrollbar-thumb: var(--color-outline);
+  --scrollbar-track: var(--color-surface-container-low);
 }
 
-html {
-  scroll-behavior: smooth;
-  color-scheme: light;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: var(--color-background);
+    color: var(--color-on-background);
+    font-family: var(--font-sans);
+    accent-color: var(--color-primary);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+  }
+
+  ::selection {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
+
+  a {
+    text-underline-offset: 3px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Evita auto-zoom en iOS Safari y asegura legibilidad en controles */
+  input,
+  select,
+  textarea {
+    font-size: max(1rem, 1em);
+    caret-color: var(--color-primary);
+  }
+
+  /* Contención de scroll en diálogos modales nativos sin bloquear body */
+  dialog:modal {
+    overscroll-behavior: contain;
+  }
+
+  dialog::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background-color: rgba(15, 23, 42, 0.48);
+    backdrop-filter: blur(3px);
+  }
 }
 
-body {
-  min-height: 100vh;
-  background-color: var(--color-background);
-  color: var(--color-on-background);
-  font-family: var(--font-sans);
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Fallback legacy WebKit/Blink solo cuando no existe scrollbar-color estándar */
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-on-surface-variant);
+  }
 }
 
-::selection {
-  background-color: var(--color-primary-container);
-  color: var(--color-on-primary-container);
+/* Oculta scrollbar en carruseles horizontales */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+@supports not (scrollbar-width: none) {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: var(--color-surface);
+/* Tablas responsivas con cabeceras sticky y diseño apilado vía Container Queries */
+.table-wrapper {
+  overflow: auto;
+  max-inline-size: 100%;
+  container-type: inline-size;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--color-outline-variant);
-  border-radius: 9999px;
+.table-wrapper table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-outline);
+.table-wrapper thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+}
+
+.table-wrapper tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  background-color: var(--color-surface-card);
+}
+
+@container (width < 600px) {
+  .table-wrapper {
+    overflow-x: hidden;
+  }
+
+  .table-wrapper table,
+  .table-wrapper thead,
+  .table-wrapper tbody,
+  .table-wrapper tr,
+  .table-wrapper th,
+  .table-wrapper td {
+    display: block;
+    width: 100%;
+  }
+
+  .table-wrapper thead {
+    display: none;
+  }
+
+  .table-wrapper tbody {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+
+  .table-wrapper tbody tr {
+    margin-block-end: 0;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: 0.875rem;
+    background-color: var(--color-surface-card);
+    overflow: hidden;
+  }
+
+  .table-wrapper tbody th {
+    position: static;
+    background-color: var(--color-surface-container-low);
+    border-bottom: 1px solid var(--color-outline-variant);
+    text-align: left !important;
+  }
+
+  .table-wrapper tbody td[data-label]:not([data-label=""]) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    text-align: left !important;
+    padding-block: 0.6875rem;
+  }
+
+  .table-wrapper td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-on-surface-variant);
+    flex-shrink: 0;
+  }
+}
+
+.animate-fade-in {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in {
+    animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-fade-in-up {
+    animation: none !important;
+  }
+}
+
+/* Popover del menú de usuario del sidebar (CSS Anchor Positioning con fallback) */
+@supports (position-area: block-start) {
+  .sidebar-user-popover[popover] {
+    inset: auto;
+    margin: 0;
+    margin-block-end: 0.5rem;
+    min-inline-size: anchor-size(width);
+    position-area: block-start span-inline-end;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  }
+}
+
+@supports not (position-area: block-start) {
+  .sidebar-user-popover[popover] {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sidebar-user-popover[popover] {
+    opacity: 0;
+    translate: 0 0.25rem;
+    transition: opacity, translate, display, overlay;
+    transition-duration: 0.15s;
+    transition-behavior: allow-discrete;
+  }
+
+  .sidebar-user-popover[popover]:popover-open {
+    opacity: 1;
+    translate: 0 0;
+    transition-duration: 0.1s;
+    @starting-style {
+      opacity: 0;
+      translate: 0 0.25rem;
+    }
+  }
+}
+
+/* Superadmin post-interaction input validation & accessible tab indicators */
+.sa-input:is(:user-invalid, .user-invalid-fallback) {
+  border-color: var(--color-error);
+  background-color: color-mix(in srgb, var(--color-error-container) 35%, transparent);
+}
+
+.sa-tab {
+  position: relative;
+  flex: none;
+}
+
+.sa-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  border-block-end: 3px solid var(--color-primary);
 }

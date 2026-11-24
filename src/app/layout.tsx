@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { QueryProvider } from "@/providers/QueryProvider";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -15,19 +16,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Nexofood — Potencia tu negocio gastronómico",
+  title: {
+    default: "NexoFood — Plataforma SaaS Gastronómica y Storefront",
+    template: "%s | NexoFood",
+  },
   description:
-    "La plataforma #1 para restaurantes. Crea tu tienda online, gestiona pedidos de todas las plataformas y fideliza a tus clientes sin comisiones abusivas.",
+    "Plataforma SaaS multi-tenant para restaurantes: gestión de catálogo y precios, pedidos, pantalla de cocina (KDS), reparto con rastreo GPS en vivo y storefront con Mercado Pago.",
   keywords: [
-    "Nexofood",
-    "restaurante",
+    "NexoFood",
+    "SaaS restaurantes",
     "pedidos online",
-    "delivery",
-    "gastronomía",
-    "software gastronómico",
-    "POS gastronómico",
+    "KDS cocina",
+    "rastreo GPS delivery",
+    "Mercado Pago",
+    "storefront gastronómico",
   ],
-  authors: [{ name: "Nexofood" }],
+  authors: [{ name: "NexoFood" }],
 };
 
 export default function RootLayout({
@@ -36,7 +40,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={plusJakartaSans.variable}>
+    <html
+      lang="es"
+      className={plusJakartaSans.variable}
+      data-scroll-behavior="smooth"
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -49,7 +57,9 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <QueryProvider>{children}</QueryProvider>
+      </body>
     </html>
   );
 }

@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { errorResponseSchema } from "@/schemas/common.schema";
 import { isProtectedPath } from "./auth-constants";
+import { formatFriendlyApiMessage } from "./error-messages";
 
 // ─── Constantes de Base URL ───────────────────────────────────────────────────
 
@@ -88,15 +89,9 @@ export function isApiError(error: unknown): error is ApiError {
 
 export function getApiErrorMessage(
   error: unknown,
-  fallback = "Ocurrió un error inesperado. Intenta nuevamente."
+  fallback = "Ocurrió un inconveniente inesperado. Por favor inténtalo nuevamente."
 ): string {
-  if (error instanceof ApiError) {
-    return error.message || fallback;
-  }
-  if (error instanceof Error) {
-    return error.message || fallback;
-  }
-  return fallback;
+  return formatFriendlyApiMessage(error, fallback);
 }
 
 // ─── Instancia CLIENTE (Browser -> BFF Proxy `/api/bff`) ─────────────────────

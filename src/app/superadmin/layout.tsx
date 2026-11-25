@@ -2,9 +2,11 @@ import React from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Alert } from "@/components/ui/Alert";
+import { ErrorStateView } from "@/components/ui/ErrorStateView";
 import { Icon } from "@/components/ui/Icon";
 import { apiServer, ApiError } from "@/lib/api-server";
 import { getAccessToken, getRefreshToken } from "@/lib/auth-cookies";
+import { extractErrorStatus } from "@/lib/error-messages";
 import {
   SuperadminProvider,
   SuperadminShell,
@@ -35,7 +37,7 @@ export default async function SuperadminLayout({
 
   let initialUser: UserProfileResponse | null = null;
   let redirectTarget: string | null = null;
-  let fatalError: string | null = null;
+  let fatalStatus: number | null = null;
 
   try {
     initialUser = await apiServer.get<UserProfileResponse>("/auth/me", {
@@ -47,10 +49,7 @@ export default async function SuperadminLayout({
         ? "/api/auth/refresh?next=/superadmin"
         : "/?session_expired=true";
     } else {
-      fatalError =
-        error instanceof Error
-          ? error.message
-          : "No se pudo verificar tu sesión en el servidor de NexoFood.";
+      fatalStatus = extractErrorStatus(error) ?? 500;
     }
   }
 
@@ -58,30 +57,16 @@ export default async function SuperadminLayout({
     redirect(redirectTarget);
   }
 
-  if (fatalError || !initialUser) {
+  if (fatalStatus !== null || !initialUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface p-6">
-        <div className="w-full max-w-lg rounded-2xl border border-outline-variant bg-surface-card p-6 shadow-level-2 space-y-4">
-          <Alert variant="danger" title="Error de conexión con NexoFood">
-            {fatalError ??
-              "No fue posible cargar tu perfil de administrador en este momento."}
-          </Alert>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/superadmin"
-              className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-on-primary-fixed-variant"
-            >
-              Reintentar
-            </Link>
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center rounded-xl border border-outline-variant px-4 py-2.5 text-sm font-semibold text-on-surface hover:bg-surface-container-low"
-            >
-              Volver al inicio de sesión
-            </Link>
-          </div>
-        </div>
-      </div>
+      <ErrorStateView
+        status={fatalStatus ?? 500}
+        context="superadmin"
+        homeHref="/"
+        homeLabel="Volver al inicio de sesión"
+        fullPage
+        showBrandHeader
+      />
     );
   }
 
@@ -98,15 +83,14 @@ export default async function SuperadminLayout({
                 Acceso restringido
               </h1>
               <p className="text-xs text-on-surface-variant">
-                Consola exclusiva para administradores globales (SUPERADMIN)
+                Consola exclusiva para administradores globales de la plataforma
               </p>
             </div>
           </div>
 
-          <Alert variant="danger" title="Permisos insuficientes (403)">
-            Tu cuenta ({initialUser.email}) tiene el rol{" "}
-            <strong>{initialUser.systemRole}</strong> y no cuenta con
-            privilegios de Superadministrador de plataforma.
+          <Alert variant="danger" title="Permisos insuficientes">
+            Tu cuenta ({initialUser.email}) no cuenta con privilegios de
+            Superadministrador de plataforma para ingresar aquí.
           </Alert>
 
           <div className="flex flex-wrap gap-3">
@@ -116,13 +100,6 @@ export default async function SuperadminLayout({
             >
               <Icon name="dashboard" size={18} />
               <span>Ir al Backoffice</span>
-            </Link>
-            <Link
-              href="/store"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-outline-variant px-4 py-2.5 text-sm font-semibold text-on-surface hover:bg-surface-container-low"
-            >
-              <Icon name="storefront" size={18} />
-              <span>Ir al Storefront</span>
             </Link>
           </div>
         </div>

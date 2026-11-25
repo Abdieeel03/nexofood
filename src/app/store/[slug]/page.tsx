@@ -6,6 +6,9 @@ import {
 } from "@/schemas/catalog.schema";
 import { tenantResponseSchema, type TenantResponse } from "@/schemas/tenant.schema";
 import { apiServer, ApiError } from "@/lib/api-server";
+import { extractErrorStatus } from "@/lib/error-messages";
+import { resolveStoreTenantOrNotFound } from "@/lib/store-server";
+import { ErrorStateView } from "@/components/ui/ErrorStateView";
 import { StorefrontView } from "@/modules/store/components/StorefrontView";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +30,12 @@ export async function generateMetadata({
       title: tenant.name,
       description: `Menú y pedidos en línea de ${tenant.name} en NexoFood.`,
     };
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return {
+        title: "Restaurante no encontrado",
+      };
+    }
     return {
       title: "Tienda",
     };
@@ -37,18 +45,11 @@ export async function generateMetadata({
 export default async function StoreSlugPage({ params }: StoreSlugPageProps) {
   const { slug } = await params;
 
-  let initialTenant: TenantResponse;
-  try {
-    initialTenant = await apiServer.get<TenantResponse>(
-      `/tenants/slug/${encodeURIComponent(slug)}`,
-      { schema: tenantResponseSchema }
-    );
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) {
-      notFound();
-    }
-    throw error;
+  const tenantResult = await resolveStoreTenantOrNotFound(slug);
+  if (!tenantResult.ok) {
+    return <ErrorStateView status={tenantResult.errorStatus} context="store" />;
   }
+  const initialTenant = tenantResult.tenant;
 
   let initialMenu: StorefrontMenuResponse;
   try {
@@ -78,7 +79,12 @@ export default async function StoreSlugPage({ params }: StoreSlugPageProps) {
         notFound();
       }
     } else {
-      throw error;
+      return (
+        <ErrorStateView
+          status={extractErrorStatus(error) ?? 500}
+          context="store"
+        />
+      );
     }
   }
 

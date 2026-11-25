@@ -388,7 +388,7 @@ export function AccountManager({
       isApiError(profileQuery.error) && profileQuery.error.status === 401;
 
     if (isUnauthorized && context === "store") {
-      const storeReturn = slug ? `/store/${encodeURIComponent(slug)}` : "/store";
+      const storeReturn = slug ? `/store/${encodeURIComponent(slug)}` : "/";
       return (
         <div className="max-w-xl mx-auto rounded-2xl border border-outline-variant bg-surface-card p-8 text-center shadow-level-1 space-y-4">
           <div className="mx-auto w-14 h-14 rounded-2xl bg-mint-subtle text-primary flex items-center justify-center">
@@ -406,7 +406,7 @@ export function AccountManager({
               href={`/?callbackUrl=${encodeURIComponent(
                 slug
                   ? `/store/${encodeURIComponent(slug)}/account`
-                  : "/store/account"
+                  : "/account"
               )}`}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-secondary-container px-5 py-2.5 text-sm font-semibold text-on-secondary shadow-xs hover:bg-secondary-accent transition-colors"
             >
@@ -417,7 +417,7 @@ export function AccountManager({
               href={storeReturn}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-outline-variant px-5 py-2.5 text-sm font-semibold text-on-surface hover:bg-surface-container-low transition-colors"
             >
-              <span>{slug ? "Volver al restaurante" : "Ir al Storefront"}</span>
+              <span>{slug ? "Volver al restaurante" : "Ir al inicio"}</span>
             </Link>
           </div>
         </div>

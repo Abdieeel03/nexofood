@@ -37,7 +37,7 @@ export const Header: React.FC = () => {
   const handleLogout = () => {
     const redirectTo = activeSlug
       ? `/store/${encodeURIComponent(activeSlug)}`
-      : "/store";
+      : "/";
     startLogoutTransition(async () => {
       queryClient.setQueryData(storeKeys.me, null);
       queryClient.removeQueries({ queryKey: ["store"] });
@@ -76,7 +76,7 @@ export const Header: React.FC = () => {
             </button>
 
             <Link
-              href="/store"
+              href={activeSlug ? `/store/${encodeURIComponent(activeSlug)}` : "/"}
               className="flex items-center gap-1.5 text-xl font-extrabold text-primary tracking-tight hover:opacity-90 transition-opacity shrink-0"
             >
               <span>NexoFood</span>
@@ -109,7 +109,7 @@ export const Header: React.FC = () => {
                   centerHref={
                     activeSlug
                       ? `/store/${encodeURIComponent(activeSlug)}/account`
-                      : "/store/account"
+                      : "/account"
                   }
                 />
                 <UserMenu

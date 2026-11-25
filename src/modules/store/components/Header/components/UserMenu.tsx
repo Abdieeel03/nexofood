@@ -99,7 +99,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               href={
                 activeSlug
                   ? `/store/${encodeURIComponent(activeSlug)}/account`
-                  : "/store/account"
+                  : "/account"
               }
               role="menuitem"
               onClick={() => setIsOpen(false)}

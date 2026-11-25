@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-8 pb-8">
           <div className="space-y-3 max-w-md">
             <Link
-              href="/store"
+              href={activeSlug ? `/store/${encodeURIComponent(activeSlug)}` : "/"}
               className="inline-flex items-center gap-1.5 text-xl font-extrabold text-primary tracking-tight"
             >
               <span>NexoFood</span>
@@ -33,14 +33,6 @@ export const Footer: React.FC = () => {
           <div className="space-y-3">
             <h2 className="text-sm font-bold text-on-surface">Comensales</h2>
             <ul className="space-y-2 text-sm text-on-surface-variant">
-              <li>
-                <Link
-                  href="/store"
-                  className="hover:text-primary transition-colors"
-                >
-                  Buscar restaurante por slug
-                </Link>
-              </li>
               {activeSlug && (
                 <>
                   <li>
@@ -66,7 +58,7 @@ export const Footer: React.FC = () => {
                   href={
                     activeSlug
                       ? `/store/${encodeURIComponent(activeSlug)}/account`
-                      : "/store/account"
+                      : "/account"
                   }
                   className="hover:text-primary transition-colors"
                 >

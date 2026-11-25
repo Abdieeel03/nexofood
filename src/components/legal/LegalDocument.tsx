@@ -21,14 +21,14 @@ export function LegalDocument({ title, updatedAt, intro, sections }: LegalDocume
     <div className="min-h-screen bg-surface">
       <header className="border-b border-outline-variant/50 bg-surface-card">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link href="/store" className="text-xl font-extrabold tracking-tight text-primary">
+          <Link href="/" className="text-xl font-extrabold tracking-tight text-primary">
             NexoFood
           </Link>
           <Link
-            href="/store"
+            href="/"
             className="text-sm font-semibold text-on-surface-variant hover:text-primary"
           >
-            Volver a la tienda
+            Ir al inicio
           </Link>
         </div>
       </header>

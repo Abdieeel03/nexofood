@@ -331,20 +331,11 @@ export function RegisterForm() {
         <LegalConsentNotice className="text-center" />
       </form>
 
-      <div className="space-y-3 pt-2 border-t border-outline-variant/50 text-center text-sm">
+      <div className="pt-2 border-t border-outline-variant/50 text-center text-sm">
         <p className="text-on-surface-variant">
           ¿Ya tienes cuenta?{" "}
           <Link href="/" className="text-primary font-bold hover:underline">
             Inicia sesión
-          </Link>
-        </p>
-        <p className="text-xs text-on-surface-variant">
-          ¿Quieres pedir comida?{" "}
-          <Link
-            href="/store"
-            className="text-primary font-semibold hover:underline"
-          >
-            Ir al storefront
           </Link>
         </p>
       </div>

@@ -241,7 +241,7 @@ export function LoginForm({
         </Button>
       </form>
 
-      <div className="space-y-3 pt-2 border-t border-outline-variant/50 text-center text-sm">
+      <div className="pt-2 border-t border-outline-variant/50 text-center text-sm">
         <p className="text-on-surface-variant">
           ¿Aún no tienes cuenta?{" "}
           <Link
@@ -249,15 +249,6 @@ export function LoginForm({
             className="text-primary font-bold hover:underline"
           >
             Regístrate gratis
-          </Link>
-        </p>
-        <p className="text-xs text-on-surface-variant">
-          ¿Quieres pedir comida?{" "}
-          <Link
-            href="/store"
-            className="text-primary font-semibold hover:underline"
-          >
-            Ir al storefront
           </Link>
         </p>
       </div>

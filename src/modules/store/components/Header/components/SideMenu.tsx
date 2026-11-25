@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { getInitials } from "@/lib/format";
@@ -83,7 +84,13 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             </div>
           ) : (
             <div className="flex items-center gap-2.5">
-              <Icon name="restaurant" size={24} fill />
+              <Image
+                src="/images/nexofood-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-lg object-contain shrink-0"
+              />
               <span className="font-extrabold text-lg tracking-tight">
                 NexoFood
               </span>

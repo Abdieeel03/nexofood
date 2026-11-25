@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
@@ -191,12 +192,16 @@ export const ErrorStateView: React.FC<ErrorStateViewProps> = ({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <Link
               href={homeHref}
-              className="inline-flex items-center gap-1.5 text-xl font-extrabold text-primary tracking-tight hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 text-xl font-extrabold text-primary tracking-tight hover:opacity-90 transition-opacity"
             >
+              <Image
+                src="/images/nexofood-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-lg object-contain shrink-0"
+              />
               <span>NexoFood</span>
-              <span className="text-secondary-container flex items-center">
-                <Icon name="restaurant" size={22} fill />
-              </span>
             </Link>
           </div>
         </header>

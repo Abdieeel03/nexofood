@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
@@ -109,6 +110,13 @@ export function Topbar({
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
+            <Image
+              src="/images/nexofood-logo.png"
+              alt="Logo de NexoFood"
+              width={28}
+              height={28}
+              className="w-7 h-7 rounded-lg object-contain shrink-0"
+            />
             <span className="text-sm font-bold text-on-surface">
               NexoFood
             </span>

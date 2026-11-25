@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { SUPPORT_EMAIL } from "@/lib/error-messages";
@@ -38,9 +39,16 @@ export default function GlobalError({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xl font-extrabold text-primary tracking-tight"
+              className="inline-flex items-center gap-2 text-xl font-extrabold text-primary tracking-tight"
             >
-              NexoFood
+              <Image
+                src="/images/nexofood-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-lg object-contain shrink-0"
+              />
+              <span>NexoFood</span>
             </Link>
           </div>
         </header>

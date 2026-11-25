@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { LegalLinks } from "@/components/legal/LegalLinks";
@@ -16,12 +17,16 @@ export const Footer: React.FC = () => {
           <div className="space-y-3 max-w-md">
             <Link
               href={activeSlug ? `/store/${encodeURIComponent(activeSlug)}` : "/"}
-              className="inline-flex items-center gap-1.5 text-xl font-extrabold text-primary tracking-tight"
+              className="inline-flex items-center gap-2 text-xl font-extrabold text-primary tracking-tight"
             >
+              <Image
+                src="/images/nexofood-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-lg object-contain shrink-0"
+              />
               <span>NexoFood</span>
-              <span className="text-secondary-container flex items-center">
-                <Icon name="restaurant" size={22} fill />
-              </span>
             </Link>
             <p className="text-sm text-on-surface-variant leading-relaxed">
               Plataforma gastronómica directa para pedir de tu restaurante

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useId, useState, useTransition } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/ui/Icon";
@@ -77,12 +78,16 @@ export const Header: React.FC = () => {
 
             <Link
               href={activeSlug ? `/store/${encodeURIComponent(activeSlug)}` : "/"}
-              className="flex items-center gap-1.5 text-xl font-extrabold text-primary tracking-tight hover:opacity-90 transition-opacity shrink-0"
+              className="flex items-center gap-2 text-xl font-extrabold text-primary tracking-tight hover:opacity-90 transition-opacity shrink-0"
             >
+              <Image
+                src="/images/nexofood-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-lg object-contain shrink-0"
+              />
               <span>NexoFood</span>
-              <span className="text-secondary-container flex items-center">
-                <Icon name="restaurant" size={22} fill />
-              </span>
             </Link>
 
             {activeSlug && (

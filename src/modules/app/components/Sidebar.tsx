@@ -510,9 +510,13 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
                 className="w-10 h-10 rounded-xl object-cover border border-outline-variant/60 bg-surface-container-low shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-level-1 shrink-0">
-                <Icon name="restaurant" size={22} />
-              </div>
+              <Image
+                src="/images/nexofood-logo.png"
+                alt="Logo de NexoFood"
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-xl object-contain shadow-level-1 shrink-0"
+              />
             )}
             <div className="min-w-0">
               <span className="text-base font-extrabold tracking-tight text-on-surface block leading-tight truncate">

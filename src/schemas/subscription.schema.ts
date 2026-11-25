@@ -47,7 +47,25 @@ export type SubscriptionCreateRequest = z.infer<
   typeof subscriptionCreateRequestSchema
 >;
 
+export const subscriptionCheckoutRequestSchema = z.object({
+  planId: uuidSchema("ID de plan inválido"),
+  cardTokenId: z.string().trim().min(1).optional(),
+  payerEmail: z.email("Correo electrónico inválido").optional(),
+});
+export type SubscriptionCheckoutRequest = z.infer<
+  typeof subscriptionCheckoutRequestSchema
+>;
+
 // ─── Response DTOs (2. Subscription) ─────────────────────────────────────────
+
+export const subscriptionPaymentConfigResponseSchema = z.object({
+  publicKey: z.string().nullable().optional(),
+  currency: z.string(),
+  cardPaymentsEnabled: z.boolean(),
+});
+export type SubscriptionPaymentConfigResponse = z.infer<
+  typeof subscriptionPaymentConfigResponseSchema
+>;
 
 export const subscriptionPlanResponseSchema = z.object({
   id: uuidSchema(),
@@ -81,9 +99,10 @@ export type SubscriptionResponse = z.infer<typeof subscriptionResponseSchema>;
 export const subscriptionCheckoutResponseSchema = z.object({
   subscriptionId: uuidSchema(),
   planId: uuidSchema(),
-  mpPreapprovalId: z.string(),
-  initPoint: z.string(),
+  mpPreapprovalId: z.string().nullable().optional(),
+  initPoint: z.string().nullable().optional(),
   status: subscriptionStatusEnum,
+  mpPreapprovalStatus: z.string().nullable().optional(),
 });
 export type SubscriptionCheckoutResponse = z.infer<
   typeof subscriptionCheckoutResponseSchema

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/format";
+import { filterIntegerInput, handleNumericKeyDown } from "@/lib/input-filters";
 import {
   useAdjustCustomerPointsMutation,
   useBlockCustomerMutation,
@@ -325,14 +326,20 @@ function CustomerDetailDialogInner({
                   <input
                     id={pointsInputId}
                     name="adjustment"
-                    type="number"
-                    step={1}
-                    min={-100000}
-                    max={100000}
+                    type="text"
+                    inputMode="numeric"
                     value={pointsDraft}
+                    onKeyDown={(e) =>
+                      handleNumericKeyDown(e, { allowNegative: true })
+                    }
                     onChange={(e) => {
                       setPointsError(null);
-                      setPointsDraft(e.target.value);
+                      setPointsDraft(
+                        filterIntegerInput(e.target.value, {
+                          allowNegative: true,
+                          maxLength: 7,
+                        })
+                      );
                     }}
                     placeholder="Ej. 50 o -20"
                     aria-invalid={Boolean(pointsError) || undefined}

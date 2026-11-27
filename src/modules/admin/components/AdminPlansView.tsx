@@ -14,6 +14,12 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrencyPEN, formatDate } from "@/lib/format";
+import {
+  filterDecimalInput,
+  filterIntegerInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import { canAccessGlobalAdmin } from "@/lib/permissions";
 import { useSessionTenant } from "@/modules/app/components/SessionTenantProvider";
 import { cleanPayload } from "@/schemas/common.schema";
@@ -411,13 +417,16 @@ export function AdminPlansView() {
                 </label>
                 <input
                   id={`${baseId}-plan-price`}
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  max={999999.99}
+                  type="text"
+                  inputMode="decimal"
                   required
+                  placeholder="0.00"
                   aria-invalid={Boolean(form.formState.errors.price)}
-                  {...form.register("price", { valueAsNumber: true })}
+                  onKeyDown={(e) => handleNumericKeyDown(e, { allowDecimal: true })}
+                  {...withInputFilter(
+                    form.register("price", { valueAsNumber: true }),
+                    filterDecimalInput
+                  )}
                   className={`${inputClass} tabular-nums`}
                 />
                 {form.formState.errors.price && (
@@ -436,15 +445,18 @@ export function AdminPlansView() {
                 </label>
                 <input
                   id={`${baseId}-plan-days`}
-                  type="number"
-                  step={1}
-                  min={1}
-                  max={3650}
+                  type="text"
+                  inputMode="numeric"
                   required
+                  placeholder="30"
                   aria-invalid={Boolean(form.formState.errors.billingCycleDays)}
-                  {...form.register("billingCycleDays", {
-                    valueAsNumber: true,
-                  })}
+                  onKeyDown={(e) => handleNumericKeyDown(e)}
+                  {...withInputFilter(
+                    form.register("billingCycleDays", {
+                      valueAsNumber: true,
+                    }),
+                    filterIntegerInput
+                  )}
                   className={`${inputClass} tabular-nums`}
                 />
                 {form.formState.errors.billingCycleDays && (
@@ -489,17 +501,20 @@ export function AdminPlansView() {
               {!unlimitedProducts && (
                 <input
                   id={`${baseId}-plan-maxProducts`}
-                  type="number"
-                  step={1}
-                  min={1}
-                  max={1000000}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="50"
                   aria-invalid={Boolean(form.formState.errors.maxProducts)}
-                  {...form.register("maxProducts", {
-                    setValueAs: (v) =>
-                      v === "" || v === null || v === undefined
-                        ? null
-                        : Number(v),
-                  })}
+                  onKeyDown={(e) => handleNumericKeyDown(e)}
+                  {...withInputFilter(
+                    form.register("maxProducts", {
+                      setValueAs: (v) =>
+                        v === "" || v === null || v === undefined
+                          ? null
+                          : Number(v),
+                    }),
+                    filterIntegerInput
+                  )}
                   className={`${inputClass} tabular-nums`}
                 />
               )}

@@ -14,6 +14,12 @@ import { ImageUploadField } from "@/components/ui/ImageUploadField";
 import { MapPicker } from "@/components/ui/MapPicker";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import {
+  filterDecimalInput,
+  filterIntegerInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
+import {
   formatLocalTime,
   formatScheduleRange,
   toApiLocalTime,
@@ -407,15 +413,23 @@ export function GeneralSettingsView() {
                 htmlFor={`${baseId}-phone`}
                 className="block text-sm font-semibold text-on-surface mb-1.5"
               >
-                Teléfono de contacto
+                Teléfono de contacto{" "}
+                <span className="font-normal text-on-surface-variant">
+                  (máx. 9 dígitos)
+                </span>
               </label>
               <input
                 id={`${baseId}-phone`}
                 type="tel"
+                inputMode="numeric"
                 autoComplete="tel"
-                maxLength={20}
+                maxLength={9}
+                placeholder="987654321"
                 disabled={!canEdit}
-                {...form.register("phone")}
+                onKeyDown={(e) => handleNumericKeyDown(e)}
+                {...withInputFilter(form.register("phone"), (v) =>
+                  filterIntegerInput(v, { maxLength: 9 })
+                )}
                 className={inputClass}
               />
             </div>
@@ -447,15 +461,20 @@ export function GeneralSettingsView() {
               </label>
               <input
                 id={`${baseId}-radius`}
-                type="number"
-                step="0.5"
-                min={0}
-                max={100}
+                type="text"
+                inputMode="decimal"
+                placeholder="5.0"
                 disabled={!canEdit}
                 aria-invalid={Boolean(form.formState.errors.deliveryRadiusKm)}
-                {...form.register("deliveryRadiusKm", {
-                  setValueAs: optionalNumberTransform,
-                })}
+                onKeyDown={(e) =>
+                  handleNumericKeyDown(e, { allowDecimal: true })
+                }
+                {...withInputFilter(
+                  form.register("deliveryRadiusKm", {
+                    setValueAs: optionalNumberTransform,
+                  }),
+                  filterDecimalInput
+                )}
                 className={`${inputClass} tabular-nums`}
               />
               {form.formState.errors.deliveryRadiusKm && (
@@ -474,15 +493,20 @@ export function GeneralSettingsView() {
               </label>
               <input
                 id={`${baseId}-fee`}
-                type="number"
-                step="0.5"
-                min={0}
-                max={1000}
+                type="text"
+                inputMode="decimal"
+                placeholder="5.00"
                 disabled={!canEdit}
                 aria-invalid={Boolean(form.formState.errors.defaultDeliveryFee)}
-                {...form.register("defaultDeliveryFee", {
-                  setValueAs: optionalNumberTransform,
-                })}
+                onKeyDown={(e) =>
+                  handleNumericKeyDown(e, { allowDecimal: true })
+                }
+                {...withInputFilter(
+                  form.register("defaultDeliveryFee", {
+                    setValueAs: optionalNumberTransform,
+                  }),
+                  filterDecimalInput
+                )}
                 className={`${inputClass} tabular-nums`}
               />
               {form.formState.errors.defaultDeliveryFee && (

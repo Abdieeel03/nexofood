@@ -8,6 +8,11 @@ import { Icon } from "@/components/ui/Icon";
 import { MapPicker } from "@/components/ui/MapPicker";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrencyPEN, formatScheduleRange } from "@/lib/format";
+import {
+  filterIntegerInput,
+  handleNumericKeyDown,
+  validatePeruRuc,
+} from "@/lib/input-filters";
 import type { DeliveryType } from "@/schemas/common.schema";
 import { orderCheckoutRequestSchema } from "@/schemas/order.schema";
 import { useStoreUi } from "@/stores/store-ui.store";
@@ -534,7 +539,7 @@ const CheckoutModalContent: React.FC<CheckoutModalContentProps> = ({
           >
             RUC para facturación{" "}
             <span className="font-normal text-on-surface-variant">
-              (opcional)
+              (opcional, 11 dígitos)
             </span>
           </label>
           <input
@@ -542,12 +547,42 @@ const CheckoutModalContent: React.FC<CheckoutModalContentProps> = ({
             name="ruc"
             type="text"
             inputMode="numeric"
-            maxLength={20}
+            maxLength={11}
             value={ruc}
-            onChange={(e) => setRuc(e.target.value)}
-            placeholder="20123456789"
+            onKeyDown={(e) => handleNumericKeyDown(e)}
+            onChange={(e) =>
+              setRuc(filterIntegerInput(e.target.value, { maxLength: 11 }))
+            }
+            placeholder="20100047218"
+            aria-invalid={
+              ruc.length > 0 && !validatePeruRuc(ruc).isValid ? true : undefined
+            }
+            aria-describedby={ruc.length > 0 ? "checkout-ruc-status" : undefined}
             className="w-full rounded-xl border border-outline-variant bg-surface-container-low px-3.5 py-2.5 text-on-surface placeholder:text-outline focus:bg-surface-card focus:border-primary focus:outline-none tabular-nums"
           />
+          {ruc.length > 0 && (() => {
+            const rucCheck = validatePeruRuc(ruc);
+            return (
+              <p
+                id="checkout-ruc-status"
+                className={`mt-1 flex items-center gap-1 text-xs font-semibold ${
+                  rucCheck.isValid ? "text-primary" : "text-error"
+                }`}
+              >
+                <Icon
+                  name={rucCheck.isValid ? "check_circle" : "error"}
+                  size={14}
+                />
+                <span>
+                  {rucCheck.isValid
+                    ? "RUC válido (11 dígitos)"
+                    : ruc.length < 11
+                      ? `Faltan ${11 - ruc.length} dígitos (${ruc.length}/11)`
+                      : rucCheck.reason}
+                </span>
+              </p>
+            );
+          })()}
         </div>
 
         <div>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validatePeruRuc } from "@/lib/input-filters";
 import {
   deliveryTypeEnum,
   orderStatusEnum,
@@ -19,7 +20,15 @@ export const orderCheckoutRequestSchema = z.object({
     .optional(),
   deliveryLatitude: wgs84LatSchema.nullable().optional(),
   deliveryLongitude: wgs84LngSchema.nullable().optional(),
-  ruc: z.string().max(20, "El RUC no puede exceder 20 caracteres").nullable().optional(),
+  ruc: z
+    .string()
+    .max(11, "El RUC debe tener exactamente 11 dígitos")
+    .refine(
+      (val) => !val || validatePeruRuc(val).isValid,
+      "El RUC ingresado no es válido (debe tener 11 dígitos y dígito verificador SUNAT válido)"
+    )
+    .nullable()
+    .optional(),
   notes: z
     .string()
     .max(1000, "Las notas no pueden exceder 1000 caracteres")

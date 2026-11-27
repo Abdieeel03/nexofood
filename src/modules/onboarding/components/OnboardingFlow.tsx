@@ -19,6 +19,13 @@ import {
   isApiError,
 } from "@/lib/api-client";
 import {
+  filterDecimalInput,
+  filterIntegerInput,
+  filterSlugInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
+import {
   formatCurrencyPEN,
   formatDate,
   slugify,
@@ -805,11 +812,14 @@ export function OnboardingFlow() {
                       ? `${baseId}-slug-help ${baseId}-slug-err`
                       : `${baseId}-slug-help`
                   }
-                  {...tenantForm.register("slug", {
-                    onChange: () => {
-                      setSlugEditedManually(true);
-                    },
-                  })}
+                  {...withInputFilter(
+                    tenantForm.register("slug", {
+                      onChange: () => {
+                        setSlugEditedManually(true);
+                      },
+                    }),
+                    filterSlugInput
+                  )}
                   className={inputClass}
                 />
                 <p
@@ -837,15 +847,22 @@ export function OnboardingFlow() {
                   htmlFor={`${baseId}-phone`}
                   className="block text-sm font-semibold text-on-surface mb-1.5"
                 >
-                  Teléfono del restaurante
+                  Teléfono del restaurante{" "}
+                  <span className="font-normal text-on-surface-variant">
+                    (máx. 9 dígitos)
+                  </span>
                 </label>
                 <input
                   id={`${baseId}-phone`}
                   type="tel"
+                  inputMode="numeric"
                   autoComplete="tel"
-                  maxLength={20}
-                  placeholder="+51 987 654 321"
-                  {...tenantForm.register("phone")}
+                  maxLength={9}
+                  placeholder="987654321"
+                  onKeyDown={(e) => handleNumericKeyDown(e)}
+                  {...withInputFilter(tenantForm.register("phone"), (v) =>
+                    filterIntegerInput(v, { maxLength: 9 })
+                  )}
                   className={inputClass}
                 />
               </div>
@@ -877,16 +894,21 @@ export function OnboardingFlow() {
                 </label>
                 <input
                   id={`${baseId}-radius`}
-                  type="number"
-                  step="0.5"
-                  min={0}
-                  max={100}
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="5.0"
                   aria-invalid={Boolean(
                     tenantForm.formState.errors.deliveryRadiusKm
                   )}
-                  {...tenantForm.register("deliveryRadiusKm", {
-                    setValueAs: optionalNumberTransform,
-                  })}
+                  onKeyDown={(e) =>
+                    handleNumericKeyDown(e, { allowDecimal: true })
+                  }
+                  {...withInputFilter(
+                    tenantForm.register("deliveryRadiusKm", {
+                      setValueAs: optionalNumberTransform,
+                    }),
+                    filterDecimalInput
+                  )}
                   className={`${inputClass} tabular-nums`}
                 />
                 {tenantForm.formState.errors.deliveryRadiusKm && (
@@ -905,16 +927,21 @@ export function OnboardingFlow() {
                 </label>
                 <input
                   id={`${baseId}-fee`}
-                  type="number"
-                  step="0.5"
-                  min={0}
-                  max={1000}
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="5.00"
                   aria-invalid={Boolean(
                     tenantForm.formState.errors.defaultDeliveryFee
                   )}
-                  {...tenantForm.register("defaultDeliveryFee", {
-                    setValueAs: optionalNumberTransform,
-                  })}
+                  onKeyDown={(e) =>
+                    handleNumericKeyDown(e, { allowDecimal: true })
+                  }
+                  {...withInputFilter(
+                    tenantForm.register("defaultDeliveryFee", {
+                      setValueAs: optionalNumberTransform,
+                    }),
+                    filterDecimalInput
+                  )}
                   className={`${inputClass} tabular-nums`}
                 />
                 {tenantForm.formState.errors.defaultDeliveryFee && (

@@ -1,8 +1,8 @@
 import React from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { apiServer, ApiError } from "@/lib/api-server";
 import { getAccessToken, getRefreshToken } from "@/lib/auth-cookies";
+import { extractErrorStatus } from "@/lib/error-messages";
 import {
   userProfileResponseSchema,
   type UserProfileResponse,
@@ -13,7 +13,7 @@ import {
 } from "@/schemas/tenant.schema";
 import { SessionTenantProvider } from "@/modules/app/components/SessionTenantProvider";
 import { AppShell } from "@/modules/app/components/AppShell";
-import { Alert } from "@/components/ui/Alert";
+import { ErrorStateView } from "@/components/ui/ErrorStateView";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +37,7 @@ export default async function SaaSLayout({
   let initialUser: UserProfileResponse | null = null;
   let initialTenant: TenantResponse | null = null;
   let redirectTarget: string | null = null;
-  let fatalError: string | null = null;
+  let fatalStatus: number | null = null;
 
   try {
     initialUser = await apiServer.get<UserProfileResponse>("/auth/me", {
@@ -49,10 +49,7 @@ export default async function SaaSLayout({
         ? "/api/auth/refresh?next=/dashboard"
         : "/?session_expired=true";
     } else {
-      fatalError =
-        error instanceof Error
-          ? error.message
-          : "No se pudo verificar tu sesión en el servidor de NexoFood.";
+      fatalStatus = extractErrorStatus(error) ?? 500;
     }
   }
 
@@ -60,30 +57,16 @@ export default async function SaaSLayout({
     redirect(redirectTarget);
   }
 
-  if (fatalError || !initialUser) {
+  if (fatalStatus !== null || !initialUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface p-6">
-        <div className="w-full max-w-lg rounded-2xl border border-outline-variant bg-surface-card p-6 shadow-level-2 space-y-4">
-          <Alert variant="danger" title="Error de conexión con NexoFood">
-            {fatalError ??
-              "No fue posible cargar tu perfil de usuario en este momento."}
-          </Alert>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-on-primary-fixed-variant"
-            >
-              Reintentar
-            </Link>
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center rounded-xl border border-outline-variant px-4 py-2.5 text-sm font-semibold text-on-surface hover:bg-surface-container-low"
-            >
-              Volver al inicio de sesión
-            </Link>
-          </div>
-        </div>
-      </div>
+      <ErrorStateView
+        status={fatalStatus ?? 500}
+        context="saas"
+        homeHref="/"
+        homeLabel="Volver al inicio de sesión"
+        fullPage
+        showBrandHeader
+      />
     );
   }
 

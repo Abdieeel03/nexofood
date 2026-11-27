@@ -17,6 +17,12 @@ import {
   type StoreRegisterFormValues,
 } from "@/schemas/tenant.schema";
 import { storeLoginAction, storeRegisterAction } from "@/lib/auth-actions";
+import {
+  filterIntegerInput,
+  filterPersonNameInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import { useStoreUi, type StoreAuthTab } from "@/stores/store-ui.store";
 import { storeKeys } from "../../queries/keys";
 import { useTenantBySlugQuery } from "../../queries/use-storefront-catalog-queries";
@@ -386,7 +392,10 @@ const StoreAuthDialogContent: React.FC<StoreAuthDialogContentProps> = ({
               }
               placeholder="Mariana Vega"
               className={inputClass}
-              {...registerForm.register("fullName")}
+              {...withInputFilter(
+                registerForm.register("fullName"),
+                filterPersonNameInput
+              )}
             />
             {registerForm.formState.errors.fullName && (
               <p
@@ -440,15 +449,16 @@ const StoreAuthDialogContent: React.FC<StoreAuthDialogContentProps> = ({
             <label htmlFor="store-register-phone" className={labelClass}>
               Teléfono{" "}
               <span className="font-normal text-on-surface-variant">
-                (opcional)
+                (opcional, máx. 9 dígitos)
               </span>
             </label>
             <input
               id="store-register-phone"
               type="tel"
+              inputMode="numeric"
               autoComplete="tel"
               enterKeyHint="next"
-              maxLength={20}
+              maxLength={9}
               aria-invalid={
                 Boolean(registerForm.formState.errors.phone) || undefined
               }
@@ -457,9 +467,12 @@ const StoreAuthDialogContent: React.FC<StoreAuthDialogContentProps> = ({
                   ? "store-register-phone-error"
                   : undefined
               }
-              placeholder="+51999888777"
+              placeholder="999888777"
               className={inputClass}
-              {...registerForm.register("phone")}
+              onKeyDown={(e) => handleNumericKeyDown(e)}
+              {...withInputFilter(registerForm.register("phone"), (v) =>
+                filterIntegerInput(v, { maxLength: 9 })
+              )}
             />
             {registerForm.formState.errors.phone && (
               <p

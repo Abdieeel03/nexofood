@@ -111,13 +111,6 @@ export const CartDrawer: React.FC = () => {
             <p className="text-sm text-on-surface-variant">
               Cada restaurante tiene un carrito independiente.
             </p>
-            <Link
-              href="/store"
-              onClick={closeCart}
-              className="mt-2 inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-on-primary-fixed-variant transition-colors"
-            >
-              Buscar restaurante
-            </Link>
           </div>
         )}
       </aside>

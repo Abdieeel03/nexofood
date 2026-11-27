@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useId, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -102,9 +103,13 @@ export function LoginForm({
   return (
     <div className="bg-surface-card rounded-2xl border border-outline-variant/70 shadow-level-2 p-6 sm:p-8 space-y-6">
       <div className="text-center space-y-2">
-        <div className="mx-auto w-12 h-12 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-level-1">
-          <Icon name="restaurant" size={26} />
-        </div>
+        <Image
+          src="/images/nexofood-logo.png"
+          alt="Logo de NexoFood"
+          width={52}
+          height={52}
+          className="mx-auto w-13 h-13 rounded-2xl shadow-level-1 object-contain"
+        />
         <h1 className="text-2xl font-extrabold text-on-surface tracking-tight">
           Inicia sesión en NexoFood
         </h1>
@@ -241,7 +246,7 @@ export function LoginForm({
         </Button>
       </form>
 
-      <div className="space-y-3 pt-2 border-t border-outline-variant/50 text-center text-sm">
+      <div className="pt-2 border-t border-outline-variant/50 text-center text-sm">
         <p className="text-on-surface-variant">
           ¿Aún no tienes cuenta?{" "}
           <Link
@@ -249,15 +254,6 @@ export function LoginForm({
             className="text-primary font-bold hover:underline"
           >
             Regístrate gratis
-          </Link>
-        </p>
-        <p className="text-xs text-on-surface-variant">
-          ¿Quieres pedir comida?{" "}
-          <Link
-            href="/store"
-            className="text-primary font-semibold hover:underline"
-          >
-            Ir al storefront
           </Link>
         </p>
       </div>

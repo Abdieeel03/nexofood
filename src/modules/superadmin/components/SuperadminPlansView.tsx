@@ -12,6 +12,12 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrencyPEN, formatDate } from "@/lib/format";
+import {
+  filterDecimalInput,
+  filterIntegerInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import { KpiCard } from "@/modules/app/components/KpiCard";
 import { cleanPayload } from "@/schemas/common.schema";
 import {
@@ -646,18 +652,21 @@ export function SuperadminPlansView() {
                 </span>
                 <input
                   id={`${baseId}-plan-price`}
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  max={999999.99}
+                  type="text"
+                  inputMode="decimal"
                   required
+                  placeholder="0.00"
                   aria-invalid={form.formState.errors.price ? "true" : "false"}
                   aria-describedby={
                     form.formState.errors.price
                       ? `${baseId}-plan-price-hint ${baseId}-plan-price-err`
                       : `${baseId}-plan-price-hint`
                   }
-                  {...form.register("price", { valueAsNumber: true })}
+                  onKeyDown={(e) => handleNumericKeyDown(e, { allowDecimal: true })}
+                  {...withInputFilter(
+                    form.register("price", { valueAsNumber: true }),
+                    filterDecimalInput
+                  )}
                   className={`${inputClass} tabular-nums`}
                 />
                 {form.formState.errors.price && (
@@ -686,11 +695,10 @@ export function SuperadminPlansView() {
                 </span>
                 <input
                   id={`${baseId}-plan-days`}
-                  type="number"
-                  step={1}
-                  min={1}
-                  max={3650}
+                  type="text"
+                  inputMode="numeric"
                   required
+                  placeholder="30"
                   aria-invalid={
                     form.formState.errors.billingCycleDays ? "true" : "false"
                   }
@@ -699,9 +707,13 @@ export function SuperadminPlansView() {
                       ? `${baseId}-plan-days-hint ${baseId}-plan-days-err`
                       : `${baseId}-plan-days-hint`
                   }
-                  {...form.register("billingCycleDays", {
-                    valueAsNumber: true,
-                  })}
+                  onKeyDown={(e) => handleNumericKeyDown(e)}
+                  {...withInputFilter(
+                    form.register("billingCycleDays", {
+                      valueAsNumber: true,
+                    }),
+                    filterIntegerInput
+                  )}
                   className={`${inputClass} tabular-nums`}
                 />
                 {form.formState.errors.billingCycleDays && (
@@ -758,11 +770,10 @@ export function SuperadminPlansView() {
               {!unlimitedProducts && (
                 <input
                   id={`${baseId}-plan-maxProducts`}
-                  type="number"
-                  step={1}
-                  min={1}
-                  max={1000000}
+                  type="text"
+                  inputMode="numeric"
                   required
+                  placeholder="50"
                   aria-invalid={
                     form.formState.errors.maxProducts ? "true" : "false"
                   }
@@ -771,12 +782,16 @@ export function SuperadminPlansView() {
                       ? `${baseId}-plan-maxProducts-hint ${baseId}-plan-maxProducts-err`
                       : `${baseId}-plan-maxProducts-hint`
                   }
-                  {...form.register("maxProducts", {
-                    setValueAs: (v) =>
-                      v === "" || v === null || v === undefined
-                        ? null
-                        : Number(v),
-                  })}
+                  onKeyDown={(e) => handleNumericKeyDown(e)}
+                  {...withInputFilter(
+                    form.register("maxProducts", {
+                      setValueAs: (v) =>
+                        v === "" || v === null || v === undefined
+                          ? null
+                          : Number(v),
+                    }),
+                    filterIntegerInput
+                  )}
                   className={`${inputClass} tabular-nums`}
                 />
               )}

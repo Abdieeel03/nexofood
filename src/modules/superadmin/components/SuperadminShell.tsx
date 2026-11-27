@@ -8,6 +8,7 @@ import React, {
   useState,
   useTransition,
 } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -409,9 +410,13 @@ function SidebarContent({
             onClick={onCloseMobile}
             className="flex items-center gap-3 min-w-0"
           >
-            <div className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-level-1 shrink-0">
-              <Icon name="shield_person" size={22} />
-            </div>
+            <Image
+              src="/images/nexofood-logo.png"
+              alt="Logo de NexoFood"
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-xl object-contain shadow-level-1 shrink-0"
+            />
             <div className="min-w-0">
               <span className="text-base font-extrabold tracking-tight text-inverse-on-surface block leading-tight truncate">
                 NexoFood

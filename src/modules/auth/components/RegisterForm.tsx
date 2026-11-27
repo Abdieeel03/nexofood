@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useId, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -11,6 +12,12 @@ import { LegalConsentNotice } from "@/components/legal/LegalLinks";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { registerAction } from "@/lib/auth-actions";
+import {
+  filterIntegerInput,
+  filterPersonNameInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import { storeKeys } from "@/modules/store/queries/keys";
 import {
   registerFormSchema,
@@ -76,9 +83,13 @@ export function RegisterForm() {
   return (
     <div className="bg-surface-card rounded-2xl border border-outline-variant/70 shadow-level-2 p-6 sm:p-8 space-y-6">
       <div className="text-center space-y-2">
-        <div className="mx-auto w-12 h-12 rounded-2xl bg-primary text-on-primary flex items-center justify-center shadow-level-1">
-          <Icon name="restaurant" size={26} />
-        </div>
+        <Image
+          src="/images/nexofood-logo.png"
+          alt="Logo de NexoFood"
+          width={52}
+          height={52}
+          className="mx-auto w-13 h-13 rounded-2xl shadow-level-1 object-contain"
+        />
         <h1 className="text-2xl font-extrabold text-on-surface tracking-tight">
           Crea tu cuenta en NexoFood
         </h1>
@@ -121,7 +132,7 @@ export function RegisterForm() {
             aria-describedby={
               errors.fullName ? `${baseId}-fullName-err` : undefined
             }
-            {...register("fullName")}
+            {...withInputFilter(register("fullName"), filterPersonNameInput)}
             className={inputClass}
           />
           {errors.fullName && (
@@ -176,19 +187,23 @@ export function RegisterForm() {
           >
             Teléfono{" "}
             <span className="font-normal text-on-surface-variant">
-              (opcional)
+              (opcional, máx. 9 dígitos)
             </span>
           </label>
           <input
             id={`${baseId}-phone`}
             type="tel"
+            inputMode="numeric"
             autoComplete="tel"
             enterKeyHint="next"
-            maxLength={20}
-            placeholder="+51 999 888 777"
+            maxLength={9}
+            placeholder="999888777"
             aria-invalid={Boolean(errors.phone)}
             aria-describedby={errors.phone ? `${baseId}-phone-err` : undefined}
-            {...register("phone")}
+            onKeyDown={(e) => handleNumericKeyDown(e)}
+            {...withInputFilter(register("phone"), (v) =>
+              filterIntegerInput(v, { maxLength: 9 })
+            )}
             className={inputClass}
           />
           {errors.phone && (
@@ -331,20 +346,11 @@ export function RegisterForm() {
         <LegalConsentNotice className="text-center" />
       </form>
 
-      <div className="space-y-3 pt-2 border-t border-outline-variant/50 text-center text-sm">
+      <div className="pt-2 border-t border-outline-variant/50 text-center text-sm">
         <p className="text-on-surface-variant">
           ¿Ya tienes cuenta?{" "}
           <Link href="/" className="text-primary font-bold hover:underline">
             Inicia sesión
-          </Link>
-        </p>
-        <p className="text-xs text-on-surface-variant">
-          ¿Quieres pedir comida?{" "}
-          <Link
-            href="/store"
-            className="text-primary font-semibold hover:underline"
-          >
-            Ir al storefront
           </Link>
         </p>
       </div>

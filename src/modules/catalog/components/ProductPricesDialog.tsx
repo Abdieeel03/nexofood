@@ -7,6 +7,12 @@ import { z } from "zod";
 import { Alert, Badge, Button, Dialog, Icon } from "@/components/ui";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrencyPEN, formatDate } from "@/lib/format";
+import {
+  filterDecimalInput,
+  filterIntegerInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import type {
   ProductPriceRequest,
   ProductPriceResponse,
@@ -723,19 +729,21 @@ const PriceRuleForm: React.FC<PriceRuleFormProps> = ({
           >
             <input
               id={`${formId}-price`}
-              type="number"
-              step="0.01"
-              min={0}
-              max={999999.99}
+              type="text"
               inputMode="decimal"
               required
+              placeholder="0.00"
               className={`${inputClassName(Boolean(errors.price))} tabular-nums`}
+              onKeyDown={(e) => handleNumericKeyDown(e, { allowDecimal: true })}
               {...getFieldAriaProps(
                 `${formId}-price`,
                 errors.price?.message,
                 false
               )}
-              {...register("price", { valueAsNumber: true })}
+              {...withInputFilter(
+                register("price", { valueAsNumber: true }),
+                filterDecimalInput
+              )}
             />
           </CatalogFormField>
 
@@ -746,19 +754,20 @@ const PriceRuleForm: React.FC<PriceRuleFormProps> = ({
           >
             <input
               id={`${formId}-discount`}
-              type="number"
-              step="0.01"
-              min={0}
-              max={100}
+              type="text"
               inputMode="decimal"
               placeholder="Ej. 20"
               className={`${inputClassName(Boolean(errors.discountPercentage))} tabular-nums`}
+              onKeyDown={(e) => handleNumericKeyDown(e, { allowDecimal: true })}
               {...getFieldAriaProps(
                 `${formId}-discount`,
                 errors.discountPercentage?.message,
                 false
               )}
-              {...register("discountPercentage")}
+              {...withInputFilter(
+                register("discountPercentage"),
+                filterDecimalInput
+              )}
             />
           </CatalogFormField>
         </div>
@@ -853,17 +862,21 @@ const PriceRuleForm: React.FC<PriceRuleFormProps> = ({
         >
           <input
             id={`${formId}-priority`}
-            type="number"
-            step={1}
+            type="text"
             inputMode="numeric"
             required
+            placeholder="0"
             className={`${inputClassName(Boolean(errors.priority))} tabular-nums`}
+            onKeyDown={(e) => handleNumericKeyDown(e, { allowNegative: true })}
             {...getFieldAriaProps(
               `${formId}-priority`,
               errors.priority?.message,
               true
             )}
-            {...register("priority", { valueAsNumber: true })}
+            {...withInputFilter(
+              register("priority", { valueAsNumber: true }),
+              (v) => filterIntegerInput(v, { allowNegative: true })
+            )}
           />
         </CatalogFormField>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { getInitials } from "@/lib/format";
@@ -83,7 +84,13 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             </div>
           ) : (
             <div className="flex items-center gap-2.5">
-              <Icon name="restaurant" size={24} fill />
+              <Image
+                src="/images/nexofood-logo.png"
+                alt=""
+                width={28}
+                height={28}
+                className="w-7 h-7 rounded-lg object-contain shrink-0"
+              />
               <span className="font-extrabold text-lg tracking-tight">
                 NexoFood
               </span>
@@ -102,17 +109,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({
 
         <nav className="flex-1 flex flex-col justify-between py-4 overflow-y-auto">
           <ul className="flex flex-col gap-1 px-3">
-            <li>
-              <Link
-                href="/store"
-                onClick={onClose}
-                className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-on-surface hover:bg-mint-subtle hover:text-primary transition-colors"
-              >
-                <Icon name="search" size={20} className="text-primary" />
-                <span>Buscar restaurante</span>
-              </Link>
-            </li>
-
             {activeSlug && (
               <li>
                 <Link
@@ -153,7 +149,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
                   href={
                     activeSlug
                       ? `/store/${encodeURIComponent(activeSlug)}/account`
-                      : "/store/account"
+                      : "/account"
                   }
                   onClick={onClose}
                   className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-on-surface hover:bg-mint-subtle hover:text-primary transition-colors"

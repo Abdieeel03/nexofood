@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
@@ -153,6 +154,13 @@ export function Topbar({
           </div>
         ) : (
           <div className="flex items-center gap-2 min-w-0">
+            <Image
+              src="/images/nexofood-logo.png"
+              alt="Logo de NexoFood"
+              width={28}
+              height={28}
+              className="w-7 h-7 rounded-lg object-contain shrink-0"
+            />
             <span className="text-sm font-bold text-on-surface">
               NexoFood
             </span>
@@ -216,17 +224,15 @@ export function Topbar({
           </Link>
         )}
 
-        <Link
-          href={
-            activeTenant
-              ? `/store/${encodeURIComponent(activeTenant.slug)}`
-              : "/store"
-          }
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-outline-variant/80 bg-surface-card text-xs sm:text-sm font-bold text-on-surface hover:border-primary hover:text-primary hover:bg-mint-subtle/40 transition-colors shrink-0"
-        >
-          <Icon name="storefront" size={18} className="text-primary shrink-0" />
-          <span>Ir al Storefront</span>
-        </Link>
+        {activeTenant && (
+          <Link
+            href={`/store/${encodeURIComponent(activeTenant.slug)}`}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-outline-variant/80 bg-surface-card text-xs sm:text-sm font-bold text-on-surface hover:border-primary hover:text-primary hover:bg-mint-subtle/40 transition-colors shrink-0"
+          >
+            <Icon name="storefront" size={18} className="text-primary shrink-0" />
+            <span>Ir al Storefront</span>
+          </Link>
+        )}
 
         <NotificationBell
           centerHref="/notifications"

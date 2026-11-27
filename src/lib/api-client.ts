@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AxiosError, type AxiosRequestConfig } from "axios";
+import axios, { type AxiosRequestConfig } from "axios";
 import { cleanPayload, type ApiResponse } from "@/schemas/common.schema";
 import { axiosClient, ApiError } from "./axios";
 
@@ -106,7 +106,7 @@ async function baseRequestEnvelope<T>(
       data: validatedData,
     };
   } catch (error) {
-    if (error instanceof AxiosError) {
+    if (axios.isAxiosError(error)) {
       throw ApiError.fromAxiosError(error);
     }
     throw error;

@@ -4,6 +4,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import type * as LeafletTypes from "leaflet";
 import { Icon } from "./Icon";
 import { Alert } from "./Alert";
+import { filterDecimalInput, handleNumericKeyDown } from "@/lib/input-filters";
 
 export interface MapPickerProps {
   latitude: number | null | undefined;
@@ -247,7 +248,11 @@ export const MapPicker: React.FC<MapPickerProps> = ({
   };
 
   const handleLatInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number.parseFloat(e.target.value);
+    const filtered = filterDecimalInput(e.target.value, { allowNegative: true });
+    if (e.target.value !== filtered) {
+      e.target.value = filtered;
+    }
+    const val = Number.parseFloat(filtered);
     if (!Number.isFinite(val) || val < -90 || val > 90) return;
     const currentLng = hasValidCoords
       ? (longitude as number)
@@ -259,7 +264,11 @@ export const MapPicker: React.FC<MapPickerProps> = ({
   };
 
   const handleLngInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = Number.parseFloat(e.target.value);
+    const filtered = filterDecimalInput(e.target.value, { allowNegative: true });
+    if (e.target.value !== filtered) {
+      e.target.value = filtered;
+    }
+    const val = Number.parseFloat(filtered);
     if (!Number.isFinite(val) || val < -180 || val > 180) return;
     const currentLat = hasValidCoords
       ? (latitude as number)
@@ -309,12 +318,13 @@ export const MapPicker: React.FC<MapPickerProps> = ({
           </label>
           <input
             id={latInputId}
-            type="number"
-            step="0.000001"
-            min={-90}
-            max={90}
+            type="text"
+            inputMode="decimal"
             disabled={disabled}
             value={hasValidCoords ? latitude : ""}
+            onKeyDown={(e) =>
+              handleNumericKeyDown(e, { allowDecimal: true, allowNegative: true })
+            }
             onChange={handleLatInputChange}
             placeholder="-12.046374"
             className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface tabular-nums disabled:opacity-60"
@@ -329,12 +339,13 @@ export const MapPicker: React.FC<MapPickerProps> = ({
           </label>
           <input
             id={lngInputId}
-            type="number"
-            step="0.000001"
-            min={-180}
-            max={180}
+            type="text"
+            inputMode="decimal"
             disabled={disabled}
             value={hasValidCoords ? longitude : ""}
+            onKeyDown={(e) =>
+              handleNumericKeyDown(e, { allowDecimal: true, allowNegative: true })
+            }
             onChange={handleLngInputChange}
             placeholder="-77.042793"
             className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface tabular-nums disabled:opacity-60"

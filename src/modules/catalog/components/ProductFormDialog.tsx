@@ -8,6 +8,12 @@ import { Alert, Button, Dialog } from "@/components/ui";
 import { ImageUploadField } from "@/components/ui/ImageUploadField";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { formatCurrencyPEN } from "@/lib/format";
+import {
+  filterDecimalInput,
+  filterIntegerInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import type { ProductRequest } from "@/schemas/catalog.schema";
 import {
   useCreateProductMutation,
@@ -387,19 +393,21 @@ const ProductFormInner: React.FC<ProductFormInnerProps> = ({
         >
           <input
             id={`${formId}-price`}
-            type="number"
-            step="0.01"
-            min={0.01}
-            max={999999.99}
+            type="text"
             inputMode="decimal"
             required
+            placeholder="0.00"
             className={`${inputClassName(Boolean(errors.price))} tabular-nums`}
+            onKeyDown={(e) => handleNumericKeyDown(e, { allowDecimal: true })}
             {...getFieldAriaProps(
               `${formId}-price`,
               errors.price?.message,
               true
             )}
-            {...register("price", { valueAsNumber: true })}
+            {...withInputFilter(
+              register("price", { valueAsNumber: true }),
+              filterDecimalInput
+            )}
           />
         </CatalogFormField>
 
@@ -412,18 +420,21 @@ const ProductFormInner: React.FC<ProductFormInnerProps> = ({
         >
           <input
             id={`${formId}-stock`}
-            type="number"
-            step={1}
-            min={0}
+            type="text"
             inputMode="numeric"
             required
+            placeholder="0"
             className={`${inputClassName(Boolean(errors.stock))} tabular-nums`}
+            onKeyDown={(e) => handleNumericKeyDown(e)}
             {...getFieldAriaProps(
               `${formId}-stock`,
               errors.stock?.message,
               true
             )}
-            {...register("stock", { valueAsNumber: true })}
+            {...withInputFilter(
+              register("stock", { valueAsNumber: true }),
+              filterIntegerInput
+            )}
           />
         </CatalogFormField>
       </div>

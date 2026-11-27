@@ -6,6 +6,11 @@ import { useForm, useWatch } from "react-hook-form";
 import { Alert, Button, Dialog } from "@/components/ui";
 import { getApiErrorMessage } from "@/lib/api-client";
 import {
+  filterIntegerInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
+import {
   productStockRequestSchema,
   type ProductResponse,
   type ProductStockRequest,
@@ -128,15 +133,18 @@ const ProductStockInner: React.FC<ProductStockInnerProps> = ({
       >
         <input
           id={inputId}
-          type="number"
-          min={0}
-          step={1}
+          type="text"
           inputMode="numeric"
           required
           autoFocus
+          placeholder="0"
           className={`${inputClassName(Boolean(errors.stock))} tabular-nums`}
+          onKeyDown={(e) => handleNumericKeyDown(e)}
           {...getFieldAriaProps(inputId, errors.stock?.message, true)}
-          {...register("stock", { valueAsNumber: true })}
+          {...withInputFilter(
+            register("stock", { valueAsNumber: true }),
+            filterIntegerInput
+          )}
         />
       </CatalogFormField>
 

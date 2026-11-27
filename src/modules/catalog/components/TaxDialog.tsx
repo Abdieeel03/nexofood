@@ -6,6 +6,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Alert, Button, Dialog } from "@/components/ui";
 import { getApiErrorMessage } from "@/lib/api-client";
+import {
+  filterDecimalInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import type { TaxRequest } from "@/schemas/catalog.schema";
 import {
   useCreateTaxMutation,
@@ -237,15 +242,17 @@ const TaxDialogInner: React.FC<TaxDialogInnerProps> = ({
         >
           <input
             id={`${formId}-rate`}
-            type="number"
-            step="0.01"
-            min={0}
-            max={100}
+            type="text"
             inputMode="decimal"
             required
+            placeholder="18.00"
             className={`${inputClassName(Boolean(errors.rate))} tabular-nums`}
+            onKeyDown={(e) => handleNumericKeyDown(e, { allowDecimal: true })}
             {...getFieldAriaProps(`${formId}-rate`, errors.rate?.message, true)}
-            {...register("rate", { valueAsNumber: true })}
+            {...withInputFilter(
+              register("rate", { valueAsNumber: true }),
+              filterDecimalInput
+            )}
           />
         </CatalogFormField>
 

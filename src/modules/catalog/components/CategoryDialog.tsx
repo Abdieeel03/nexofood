@@ -6,6 +6,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Alert, Button, Dialog } from "@/components/ui";
 import { getApiErrorMessage } from "@/lib/api-client";
+import {
+  filterIntegerInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import type { CategoryRequest } from "@/schemas/catalog.schema";
 import {
   useCreateCategoryMutation,
@@ -248,18 +253,21 @@ const CategoryDialogInner: React.FC<CategoryDialogInnerProps> = ({
         >
           <input
             id={`${formId}-sortOrder`}
-            type="number"
-            min={0}
-            step={1}
+            type="text"
             inputMode="numeric"
             required
+            placeholder="0"
             className={`${inputClassName(Boolean(errors.sortOrder))} tabular-nums`}
+            onKeyDown={(e) => handleNumericKeyDown(e)}
             {...getFieldAriaProps(
               `${formId}-sortOrder`,
               errors.sortOrder?.message,
               true
             )}
-            {...register("sortOrder", { valueAsNumber: true })}
+            {...withInputFilter(
+              register("sortOrder", { valueAsNumber: true }),
+              filterIntegerInput
+            )}
           />
         </CatalogFormField>
 

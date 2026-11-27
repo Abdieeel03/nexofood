@@ -6,6 +6,11 @@ import { useForm } from "react-hook-form";
 import { Alert, Button, Dialog } from "@/components/ui";
 import { getApiErrorMessage } from "@/lib/api-client";
 import {
+  filterIntegerInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
+import {
   categorySortOrderRequestSchema,
   type CategoryResponse,
   type CategorySortOrderRequest,
@@ -106,15 +111,18 @@ const CategorySortOrderInner: React.FC<CategorySortOrderInnerProps> = ({
       >
         <input
           id={fieldId}
-          type="number"
-          min={0}
-          step={1}
+          type="text"
           inputMode="numeric"
           required
           autoFocus
+          placeholder="0"
           className={`${inputClassName(Boolean(errors.sortOrder))} tabular-nums`}
+          onKeyDown={(e) => handleNumericKeyDown(e)}
           {...getFieldAriaProps(fieldId, errors.sortOrder?.message, true)}
-          {...register("sortOrder", { valueAsNumber: true })}
+          {...withInputFilter(
+            register("sortOrder", { valueAsNumber: true }),
+            filterIntegerInput
+          )}
         />
       </CatalogFormField>
 

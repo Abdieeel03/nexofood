@@ -19,6 +19,12 @@ import {
 } from "@/lib/api-client";
 import { formatDateTime } from "@/lib/format";
 import {
+  filterIntegerInput,
+  filterPersonNameInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
+import {
   changePasswordFormSchema,
   customerAddressRequestSchema,
   customerAddressResponseSchema,
@@ -576,7 +582,10 @@ export function AccountManager({
                     ? `${baseId}-fullName-error`
                     : undefined
                 }
-                {...profileForm.register("fullName")}
+                {...withInputFilter(
+                  profileForm.register("fullName"),
+                  filterPersonNameInput
+                )}
                 className={inputClass}
               />
               {profileForm.formState.errors.fullName && (
@@ -595,21 +604,28 @@ export function AccountManager({
                 htmlFor={`${baseId}-phone`}
                 className="block text-sm font-semibold text-on-surface mb-1.5"
               >
-                Teléfono de contacto
+                Teléfono de contacto{" "}
+                <span className="font-normal text-on-surface-variant">
+                  (máx. 9 dígitos)
+                </span>
               </label>
               <input
                 id={`${baseId}-phone`}
                 type="tel"
+                inputMode="numeric"
                 autoComplete="tel"
-                maxLength={20}
-                placeholder="+51 999 888 777"
+                maxLength={9}
+                placeholder="999888777"
                 aria-invalid={Boolean(profileForm.formState.errors.phone)}
                 aria-describedby={
                   profileForm.formState.errors.phone
                     ? `${baseId}-phone-error`
                     : `${baseId}-phone-help`
                 }
-                {...profileForm.register("phone")}
+                onKeyDown={(e) => handleNumericKeyDown(e)}
+                {...withInputFilter(profileForm.register("phone"), (v) =>
+                  filterIntegerInput(v, { maxLength: 9 })
+                )}
                 className={inputClass}
               />
               <p

@@ -12,6 +12,12 @@ import { LegalConsentNotice } from "@/components/legal/LegalLinks";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { registerAction } from "@/lib/auth-actions";
+import {
+  filterIntegerInput,
+  filterPersonNameInput,
+  handleNumericKeyDown,
+  withInputFilter,
+} from "@/lib/input-filters";
 import { storeKeys } from "@/modules/store/queries/keys";
 import {
   registerFormSchema,
@@ -126,7 +132,7 @@ export function RegisterForm() {
             aria-describedby={
               errors.fullName ? `${baseId}-fullName-err` : undefined
             }
-            {...register("fullName")}
+            {...withInputFilter(register("fullName"), filterPersonNameInput)}
             className={inputClass}
           />
           {errors.fullName && (
@@ -181,19 +187,23 @@ export function RegisterForm() {
           >
             Teléfono{" "}
             <span className="font-normal text-on-surface-variant">
-              (opcional)
+              (opcional, máx. 9 dígitos)
             </span>
           </label>
           <input
             id={`${baseId}-phone`}
             type="tel"
+            inputMode="numeric"
             autoComplete="tel"
             enterKeyHint="next"
-            maxLength={20}
-            placeholder="+51 999 888 777"
+            maxLength={9}
+            placeholder="999888777"
             aria-invalid={Boolean(errors.phone)}
             aria-describedby={errors.phone ? `${baseId}-phone-err` : undefined}
-            {...register("phone")}
+            onKeyDown={(e) => handleNumericKeyDown(e)}
+            {...withInputFilter(register("phone"), (v) =>
+              filterIntegerInput(v, { maxLength: 9 })
+            )}
             className={inputClass}
           />
           {errors.phone && (
